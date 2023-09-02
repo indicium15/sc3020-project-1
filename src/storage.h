@@ -3,7 +3,14 @@
 
 //NBA Data Record
 struct Record{
+
 };
+
+struct Block{
+
+};
+
+typedef unsigned int uint;
 
 //Structure of a Database
 //Fields are packed into records, records are packed into blocks
@@ -12,7 +19,7 @@ class Storage{
         //Disk capacity between 100-500MB
         uint diskCapacity;
         //Block size of 400 bytes
-        uint blockSize;
+        uint blockSize = 400;
     public:
         //Constructor
         Storage(uint diskCapacity, uint blockSize);
