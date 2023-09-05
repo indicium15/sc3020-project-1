@@ -25,7 +25,7 @@ bool Storage::allocateRecord(Record record)
     // Error case: no blocks are available
     if (availableBlocks == 0)
     {
-        return 0;
+        return false;
     }
     // Try to find an available block and get the address of it
     uchar *blockAddress = findAvailableBlock(sizeof(record));
@@ -36,6 +36,7 @@ bool Storage::allocateRecord(Record record)
     }
     // Copy the record data to the memory address
     memcpy(blockAddress, &record, sizeof(record));
+    currentBlockSize += sizeof(record);
     // Move the cursor forward by the amount of memory allocated
     databaseCursor = (blockAddress + sizeof(record));
     return true;
