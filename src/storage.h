@@ -2,17 +2,17 @@
 #define STORAGE_H
 
 // NBA Data Record
-//  Size of one record written to database:
-//  game_date (int) = 4 bytes
-//  team_id_home (unsigned short int) = 2 bytes
-//  pts_home (unsigned short int) = 2 bytes
-//  ast_home (unsigned short int) = 2 bytes
-//  reb_home (unsigned short int) = 2 bytes
-//  fg_pct_home (float) = 4 bytes
-//  ft_pct_home (float) = 4 bytes
-//  fg3_pct_home (float) = 4 bytes
-//  home_team_wins (bool) = 1 byte
-//  Total: 25 bytes
+// Size of one record written to database:
+// game_date (int) = 4 bytes
+// team_id_home (unsigned short int) = 2 bytes
+// pts_home (unsigned short int) = 2 bytes
+// ast_home (unsigned short int) = 2 bytes
+// reb_home (unsigned short int) = 2 bytes
+// fg_pct_home (float) = 4 bytes
+// ft_pct_home (float) = 4 bytes
+// fg3_pct_home (float) = 4 bytes
+// home_team_wins (bool) = 1 byte
+// Total: 25 bytes
 struct Record
 {
     int gameDate;
@@ -24,6 +24,8 @@ struct Record
 
 struct Block
 {
+    int blockID;
+    Record records[10];
 };
 
 typedef unsigned int uint;
