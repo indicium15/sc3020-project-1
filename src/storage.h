@@ -1,5 +1,6 @@
 #ifndef STORAGE_H
 #define STORAGE_H
+#include <string>
 
 // NBA Data Record
 // Size of one record written to database:
@@ -15,6 +16,7 @@
 // Total: 25 bytes
 struct Record
 {
+    int recordID;
     int gameDate;
     unsigned short int teamID;
     unsigned short int pts, ast, reb;
@@ -22,13 +24,8 @@ struct Record
     bool homeTeamWins;
 };
 
-struct Block
-{
-    int blockID;
-    Record records[10];
-};
-
 typedef unsigned int uint;
+typedef unsigned char uchar;
 
 // Structure of a Database
 // Fields are packed into records, records are packed into blocks
@@ -39,16 +36,28 @@ private:
     uint diskCapacity;
     // Block size of 400 bytes
     uint blockSize = 400;
+    // Current block number that data is being written to
+    int currentBlock;
+    int currentBlockSize;
+    // Number of blocks that are available in the database
+    int availableBlocks;
+    uchar *baseAddress;
+    uchar *databaseCursor;
 
 public:
     // Constructor
     Storage(uint diskCapacity, uint blockSize);
     // Destructor
     ~Storage();
+    // TODO: Write a function to parse file data and return record object
     // Allocate memory to a block
     bool allocateBlock();
     // Allocate memory to a record
-    bool allocateRecord();
+    bool allocateRecord(Record record);
+    // Function to read a block
+    uchar *readBlock(int blockID);
+    // Function to find available block while allocating records
+    uchar *findAvailableBlock(int size);
 };
 
 #endif
