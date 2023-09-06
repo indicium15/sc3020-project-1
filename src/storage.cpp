@@ -1,4 +1,5 @@
 #include "storage.h"
+#include "record.h"
 #include <iostream>
 #include <string>
 #include <vector>
@@ -18,6 +19,7 @@ Storage::Storage(uint diskCapacity, uint blockSize)
     this->availableBlocks = diskCapacity / blockSize;
     this->baseAddress = static_cast<uchar *>(malloc(diskCapacity));
     this->databaseCursor = baseAddress;
+    this->blockRecords[0] = 0;
 }
 
 bool Storage::allocateRecord(Record record)
@@ -37,6 +39,12 @@ bool Storage::allocateRecord(Record record)
     // Copy the record data to the memory address
     memcpy(blockAddress, &record, sizeof(record));
     currentBlockSize += sizeof(record);
+    // Update blockRecords value to keep track
+    auto find = blockRecords.find(currentBlock);
+    if (find != blockRecords.end())
+    {
+        find->second += 1;
+    }
     // Move the cursor forward by the amount of memory allocated
     databaseCursor = (blockAddress + sizeof(record));
     return true;
@@ -59,14 +67,39 @@ uchar *Storage::findAvailableBlock(int recordSize)
     {
         // Unspanned implementation, go past the remaining fields
         databaseCursor += (blockSize - currentBlockSize);
-        uchar *blockPointer = databaseCursor;
-        databaseCursor += blockSize;
         // Change internal variables to acknowledge the new block
         availableBlocks--;
         currentBlock++;
         currentBlockSize = 0;
-        return blockPointer;
+        blockRecords[currentBlock] = 0;
+        return databaseCursor;
     }
+}
+
+uchar *Storage::readBlock(int blockID)
+{
+    // Calculate starting memory address of block from base address of database and block size
+    uchar *blockCursor = baseAddress + (blockID * blockSize);
+    uchar *copy = new uchar[400];
+    std::memcpy(copy, blockCursor, blockSize);
+    return copy;
+}
+
+void Storage::printBlockRecords()
+{
+    for (const auto &pair : blockRecords)
+    {
+        std::cout << "Block ID: " << pair.first << ", Num Records: " << pair.second << std::endl;
+    }
+}
+
+int Storage::getNumberOfRecords(int blockID){
+    auto find = blockRecords.find(blockID);
+    if (find != blockRecords.end())
+    {
+        return find->second;
+    }
+    return 0;
 }
 
 Storage::~Storage()

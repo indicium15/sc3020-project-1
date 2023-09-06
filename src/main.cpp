@@ -8,105 +8,43 @@
 #include <typeinfo>
 #include <chrono>
 #include <ctime>
-#include <iomanip>
+#include <iostream>
+#include <unordered_map>
+#include "storage.h"
+#include "record.h"
 
 using namespace std;
 // Custom definition for days offset calculation
 using days = chrono::duration<int, ratio<60 * 60 * 24>>;
+typedef unsigned int uint;
 
 /**
- * @brief Function that converts date string found in data to an integer offset from 01/01/2000 for storage
+ * @brief Sorting function used for putting records in chronological order. If the game dates are same, use teamID to order the records
  *
- * @param dateString Input string for conversion
- * @return int Date offset from 01/01/2000
+ * @param a
+ * @param b
+ * @return true
+ * @return false
  */
-int dateToOffset(const string &dateString)
+bool compareRecords(const Record &a, const Record &b)
 {
-    // Set starting date 01/01/2000
-    chrono::system_clock::time_point startingDate = chrono::system_clock::from_time_t(946684800); // UNIX timestamp for January 1, 2000
-
-    // Parse input date string
-    tm tmDate = {};
-    istringstream dateStream(dateString);
-    dateStream >> get_time(&tmDate, "%d/%m/%Y");
-    chrono::system_clock::time_point inputDate = chrono::system_clock::from_time_t(mktime(&tmDate));
-
-    // Calculate the date offset from starting date
-    days dateOffset = chrono::duration_cast<days>(inputDate - startingDate);
-    int daysSinceEpoch = dateOffset.count();
-    return daysSinceEpoch;
-}
-
-/**
- * @brief Function to convert an offset to a date string for displaying information
- *
- * @param offsetInDays Integer value stored in database
- * @return string Date string used for display
- */
-//
-string offsetToDate(int offsetInDays)
-{
-    // Set starting date 01/01/2000
-    chrono::system_clock::time_point startingDate = chrono::system_clock::from_time_t(946684800); // UNIX timestamp for January 1, 2000
-
-    // Calculate date from offset
-    chrono::system_clock::time_point calculatedDate = startingDate + days(offsetInDays);
-
-    // Convert date to a string
-    time_t calculatedTime = chrono::system_clock::to_time_t(calculatedDate);
-    tm tmDate = *localtime(&calculatedTime);
-    ostringstream dateStream;
-    dateStream << put_time(&tmDate, "%d/%m/%Y");
-    return dateStream.str();
-}
-
-/**
- * @brief Function that converts team id to a offset from the lowest team ID found in the dataset for storage.
- *
- * @param teamID read from file
- * @return unsigned short int
- */
-unsigned short int teamIDToOffset(int teamID)
-{
-    return (teamID - 1610612736);
-}
-
-/**
- * @brief Function that converts team id offset to integer value for displaying
- *
- * @param offset read from database
- * @return int
- */
-int offsetToTeamID(unsigned short int offset)
-{
-    return (1610612736 + offset);
-}
-
-/**
- * @brief Function that converts int homeTeamWins to a boolean for database storage.
- *
- * @param homeTeamWins read from file
- * @return true if value == 1
- * @return false if value == 0
- */
-bool winsToBool(int homeTeamWins)
-{
-    return (homeTeamWins == 1 ? true : false);
-}
-
-/**
- * @brief Function that converts boolean homeTeamWins from database to int for display
- *
- * @param wins fread from database
- * @return int
- */
-int boolWinstoInt(bool wins)
-{
-    return (wins == 1 ? true : false);
+    // Comapre dates of games
+    if (a.gameDate < b.gameDate)
+    {
+        return true;
+    }
+    // If dates are the same, compare by teamID
+    else if (a.gameDate == b.gameDate)
+    {
+        return a.teamID < b.teamID;
+    }
+    return false;
 }
 
 int main()
 {
+    vector<Record> records;
+    Storage storage(100000, 400);
     // Read the input file
     ifstream inputFile("../games.txt");
     if (!inputFile.is_open())
@@ -119,56 +57,140 @@ int main()
     while (getline(inputFile, line))
     {
         lineNumber++;
-        // Skip the first line of the file
+        // Skip the first line of the file (column headers)
         if (lineNumber == 1)
         {
             continue;
         }
-        // Remove code for final
-        if (lineNumber == 5)
+        // Comment out for final demonstration
+        if (lineNumber == 18)
         {
             break;
         }
         istringstream iss(line);
         vector<string> fields;
         string field;
-        // Split the line into an array separated by the \t delimiter
+        // Split the line into an array of strings separated by the \t delimiter
         while (getline(iss, field, '\t'))
         {
             fields.push_back(field);
         }
-        // Assign values to each variable for the column before storing to database
-        // TODO: Add constructor for record here 
-        string gameDateStr = fields[0], teamID = fields[1];
+        // Assign values to each variable for the column before creating a Record object
+        string gameDateStr = fields[0];
+        int teamID = stoi(fields[1]);
         unsigned short int pts = stoi(fields[2]), ast = stoi(fields[6]), reb = stoi(fields[7]);
         int homeTeamWins = stoi(fields[8]);
         float fgPct = stof(fields[3]), ftPct = stof(fields[4]), fg3Pct = stof(fields[5]);
-       
-        if (!gameDateStr.empty() && !teamID.empty() && pts != 0 && fgPct != 0.0 && ftPct != 0.0 && fg3Pct != 0.0 && ast != 0 && reb != 0 && homeTeamWins != 0)
+        cout << "-----------------------------" << endl;
+        cout << "Read from File: " << endl;
+        cout << "Line Number: " << lineNumber << endl;
+        cout << "Game Date: " << gameDateStr << endl;
+        cout << "Team ID: " << teamID << endl;
+        cout << "PTS: " << pts << endl;
+        cout << "FG Pct: " << fgPct << endl;
+        cout << "FT Pct: " << ftPct << endl;
+        cout << "FG3 Pct: " << fg3Pct << endl;
+        cout << "AST: " << ast << endl;
+        cout << "REB: " << reb << endl;
+        cout << "REB: " << reb << endl;
+        cout << "Home Team Wins: " << homeTeamWins << endl;
+        try
         {
-            int gameDateOffset = dateToOffset(gameDateStr);
-            unsigned short int teamIDOffset = teamIDToOffset(stoi(teamID));
-            bool homeTeamWinsBool = winsToBool(homeTeamWins);
+            Record recordToInsert(gameDateStr, teamID, pts, reb, ast, fgPct, ftPct, fg3Pct, homeTeamWins);
             cout << "-----------------------------" << endl;
+            cout << "Record Information" << endl;
             cout << "Line Number: " << lineNumber << endl;
-            cout << "Game Date Written to Database: " << gameDateOffset << endl;
-            cout << "Game Date Reading from Database: " << offsetToDate(gameDateOffset) << endl;
-            cout << "Team ID Written to Database: " << teamIDOffset << endl;
-            cout << "Team ID Reading from Database: " << offsetToTeamID(teamIDOffset) << endl;
-            cout << "PTS: " << pts << endl;
-            cout << "FG Pct: " << fgPct << endl;
-            cout << "FT Pct: " << ftPct << endl;
-            cout << "FG3 Pct: " << fg3Pct << endl;
-            cout << "AST: " << ast << endl;
-            cout << "REB: " << reb << endl;
-            cout << "Home Team Wins Written to Database: " << homeTeamWinsBool << endl;
-            cout << "Home Team Wins Reading from Database: " << boolWinstoInt(homeTeamWinsBool) << endl;
+            cout << "Game Date Written to Database: " << recordToInsert.gameDate << endl;
+            // cout << "Game Date Reading from Database: " << recordToInsert.offsetToDate(recordToInsert.gameDate) << endl;
+            cout << "Team ID Written to Database: " << recordToInsert.teamID << endl;
+            // cout << "Team ID Reading from Database: " << recordToInsert.offsetToTeamID(recordToInsert.teamID) << endl;
+            cout << "PTS: " << recordToInsert.pts << endl;
+            cout << "FG Pct: " << recordToInsert.fgPct << endl;
+            cout << "FT Pct: " << recordToInsert.ftPct << endl;
+            cout << "FG3 Pct: " << recordToInsert.fg3Pct << endl;
+            cout << "AST: " << recordToInsert.ast << endl;
+            cout << "REB: " << recordToInsert.reb << endl;
+            cout << "Home Team Wins Written to Database: " << recordToInsert.homeTeamWins << endl;
+            // cout << "Home Team Wins Reading from Database: " << recordToInsert.boolWinsToInt(recordToInsert.homeTeamWins) << endl;
+            records.push_back(recordToInsert);
         }
-        else
+        catch (...)
         {
             cerr << "Error parsing line number: " << lineNumber << endl;
         }
     }
     inputFile.close();
-    return 0;
+    cout << "Sorted Records" << endl;
+    sort(records.begin(), records.end(), compareRecords);
+    for (const Record &record : records)
+    {
+        record.print();
+        if (storage.allocateRecord(record))
+        {
+            // cout << "Record allocated sucessfully." << endl;
+        }
+        else
+        {
+            cerr << "An error occured while storing record" << endl;
+        }
+    }
+    storage.printBlockRecords();
+    std::vector<Record> recordsRead;
+    uchar *dataBlock0 = storage.readBlock(0);
+    int block0Records = storage.getNumberOfRecords(0);
+    cout << "Block 0 Records: " << block0Records << endl;
+    uchar *dataBlock1 = storage.readBlock(1);
+    int block1Records = storage.getNumberOfRecords(1);
+    cout << "Block 1 Records: " << block1Records << endl;
+    cout << "Reading Block 0 From Database" << endl;
+    for (int i = 0; i < block0Records; ++i)
+    {
+        // Calculate the offset within dataBlock0 for each record
+        int offset = i * sizeof(Record);
+
+        // Create a new Record object from the data at the calculated offset
+        //TODO FIGURE OUT WHY THE ASSISTS AND REBOUNDS HAVE SWITCHED PLACES
+        Record record(
+            *reinterpret_cast<int *>(dataBlock0 + offset),                     // gameDate
+            *reinterpret_cast<unsigned short int *>(dataBlock0 + offset + 4),  // teamID
+            *reinterpret_cast<unsigned short int *>(dataBlock0 + offset + 6),  // points
+            *reinterpret_cast<unsigned short int *>(dataBlock0 + offset + 10),  // rebounds
+            *reinterpret_cast<unsigned short int *>(dataBlock0 + offset + 8), // assists
+            *reinterpret_cast<float *>(dataBlock0 + offset + 12),              // fgPercentage
+            *reinterpret_cast<float *>(dataBlock0 + offset + 16),              // ftPercentage
+            *reinterpret_cast<float *>(dataBlock0 + offset + 20),              // fg3Percentage
+            *reinterpret_cast<bool *>(dataBlock0 + offset + 24)                // fg3Percentage
+        );
+
+        recordsRead.push_back(record);
+        // Add the record to the vector
+    }
+    // cout << "Reading Block 1 From Database" << endl;
+    // for (int i = 0; i < block1Records; ++i)
+    // {
+    //     // Calculate the offset within dataBlock0 for each record
+    //     int offset = i * sizeof(Record);
+
+    //     // Create a new Record object from the data at the calculated offset
+    //     Record record(
+    //         *reinterpret_cast<int *>(dataBlock1 + offset),                     // gameDate
+    //         *reinterpret_cast<unsigned short int *>(dataBlock1 + offset + 4),  // teamID
+    //         *reinterpret_cast<unsigned short int *>(dataBlock1 + offset + 6),  // points
+    //         *reinterpret_cast<unsigned short int *>(dataBlock1 + offset + 8),  // rebounds
+    //         *reinterpret_cast<unsigned short int *>(dataBlock1 + offset + 10), // assists
+    //         *reinterpret_cast<float *>(dataBlock1 + offset + 12),              // fgPercentage
+    //         *reinterpret_cast<float *>(dataBlock1 + offset + 16),              // ftPercentage
+    //         *reinterpret_cast<float *>(dataBlock1 + offset + 20),              // fg3Percentage
+    //         *reinterpret_cast<bool *>(dataBlock1 + offset + 24)                // fg3Percentage
+    //     );
+
+    //     recordsRead.push_back(record);
+    //     // Add the record to the vector
+    // }
+    for (const Record &record : recordsRead)
+    {
+        record.print();
+    }
+
+    return 1;
 }

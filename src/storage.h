@@ -1,29 +1,9 @@
 #ifndef STORAGE_H
 #define STORAGE_H
 #include <string>
-
-// NBA Data Record
-// Size of one record written to database:
-// game_date (int) = 4 bytes
-// team_id_home (unsigned short int) = 2 bytes
-// pts_home (unsigned short int) = 2 bytes
-// ast_home (unsigned short int) = 2 bytes
-// reb_home (unsigned short int) = 2 bytes
-// fg_pct_home (float) = 4 bytes
-// ft_pct_home (float) = 4 bytes
-// fg3_pct_home (float) = 4 bytes
-// home_team_wins (bool) = 1 byte
-// Total: 25 bytes
-struct Record
-{
-    int recordID;
-    int gameDate;
-    unsigned short int teamID;
-    unsigned short int pts, ast, reb;
-    float fgPct, ftPct, fg3Pct;
-    bool homeTeamWins;
-};
-
+#include <iostream>
+#include <unordered_map>
+#include "record.h"
 typedef unsigned int uint;
 typedef unsigned char uchar;
 
@@ -43,6 +23,8 @@ private:
     int availableBlocks;
     uchar *baseAddress;
     uchar *databaseCursor;
+    // Dictionary to store the number of records in each block
+    unordered_map<int,int> blockRecords;
 
 public:
     // Constructor
@@ -54,10 +36,14 @@ public:
     bool allocateBlock();
     // Allocate memory to a record
     bool allocateRecord(Record record);
-    // Function to read a block
-    uchar *readBlock(int blockID);
     // Function to find available block while allocating records
     uchar *findAvailableBlock(int size);
+    // Function to read a block
+    uchar *readBlock(int blockID);
+    // Function to print the content of blockRecords
+    void printBlockRecords();
+    // Return the number of records for a blockID by looking up the structure
+    int getNumberOfRecords(int blockID);
 };
 
 #endif
