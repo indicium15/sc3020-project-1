@@ -10,6 +10,7 @@
 #include <ctime>
 #include <iostream>
 #include <unordered_map>
+#include <algorithm>
 #include "storage.h"
 #include "record.h"
 
