@@ -65,6 +65,9 @@ uchar *Storage::findAvailableBlock(int recordSize)
     // Case 2: A new block has to be allocated for the new record
     if (currentBlockSize + recordSize > blockSize && availableBlocks > 0)
     {
+        // Spanned implementation, go to the next block
+        
+        
         // Unspanned implementation, go past the remaining fields
         databaseCursor += (blockSize - currentBlockSize);
         // Change internal variables to acknowledge the new block
@@ -81,7 +84,7 @@ uchar *Storage::readBlock(int blockID)
     // Calculate starting memory address of block from base address of database and block size
     uchar *blockCursor = baseAddress + (blockID * blockSize);
     uchar *copy = new uchar[400];
-    std::memcpy(copy, blockCursor, blockSize);
+    memcpy(copy, blockCursor, blockSize);
     return copy;
 }
 
@@ -89,9 +92,41 @@ void Storage::printBlockRecords()
 {
     for (const auto &pair : blockRecords)
     {
-        std::cout << "Block ID: " << pair.first << ", Num Records: " << pair.second << std::endl;
+        cout << "Block ID: " << pair.first << ", Num Records: " << pair.second << endl;
     }
 }
+
+vector<Record> Storage::readRecordsFromBlock()
+{
+    vector<Record> records;
+    for (int blockID = 0; blockID <= currentBlock; ++blockID){
+        
+        uchar *blockCursor = baseAddress + (blockID * blockSize); //starting memory address of the particular block
+        int numRecordsInBlock = getNumberOfRecords(blockID);
+        if(numRecordsInBlock == 0){
+            break;
+        }
+
+        for (int i = 0; i < numRecordsInBlock; ++i)
+        {
+            int offset = i * sizeof(Record);
+            Record record(
+                *reinterpret_cast<int *>(blockCursor + offset),           // gameDate
+                *reinterpret_cast<uint8_t *>(blockCursor + offset + 4),   // teamID
+                *reinterpret_cast<uint8_t *>(blockCursor + offset + 6),   // points
+                *reinterpret_cast<uint8_t *>(blockCursor + offset + 10),  // rebounds
+                *reinterpret_cast<uint8_t *>(blockCursor + offset + 8),   // assists
+                *reinterpret_cast<float *>(blockCursor + offset + 12),    // fgPercentage
+                *reinterpret_cast<float *>(blockCursor + offset + 16),    // ftPercentage
+                *reinterpret_cast<float *>(blockCursor + offset + 20),    // fg3Percentage
+                *reinterpret_cast<bool *>(blockCursor + offset + 24)      // homeTeamWins
+            );
+            records.push_back(record);
+        }
+    }
+    return records;
+}
+
 
 int Storage::getNumberOfRecords(int blockID){
     auto find = blockRecords.find(blockID);
