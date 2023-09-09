@@ -42,6 +42,8 @@ public:
     uchar *readBlock(int blockID);
     // Function to print the content of blockRecords
     void printBlockRecords();
+    // Function to print the content of all blocks
+    vector<Record> readRecordsFromBlock();
     // Return the number of records for a blockID by looking up the structure
     int getNumberOfRecords(int blockID);
 };

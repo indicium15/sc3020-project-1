@@ -6,6 +6,7 @@
 #include <tuple>
 #include <unordered_map>
 #include <string>
+#include <cstdint>
 #include <typeinfo>
 #include <chrono>
 #include <ctime>
@@ -15,8 +16,8 @@ using namespace std;
 // Used for calculating the date offset in the function dateToOffset()
 using days = chrono::duration<int, ratio<60 * 60 * 24>>;
 
-Record::Record(int date, unsigned short int team, unsigned short int points, unsigned short int rebounds,
-               unsigned short int assists, float fgPercentage, float ftPercentage, float fg3Percentage,
+Record::Record(int date, uint8_t team, uint8_t points, uint8_t rebounds,
+               uint8_t assists, float fgPercentage, float ftPercentage, float fg3Percentage,
                bool homeWins)
     : gameDate(date), teamID(team), pts(points), ast(assists), reb(rebounds),
       fgPct(fgPercentage), ftPct(ftPercentage), fg3Pct(fg3Percentage), homeTeamWins(homeWins){};
@@ -34,10 +35,10 @@ Record::Record(int date, unsigned short int team, unsigned short int points, uns
  * @param fg3Pct 
  * @param homeTeamWins 
  */
-Record::Record(string gameDateStr, int teamID, unsigned short int pts, unsigned short int reb, unsigned short int ast, float fgPct, float ftPct, float fg3Pct, int homeTeamWins)
+Record::Record(string gameDateStr, int teamID, uint8_t pts, uint8_t reb, uint8_t ast, float fgPct, float ftPct, float fg3Pct, int homeTeamWins)
 {
     int gameDateOffset = dateToOffset(gameDateStr);
-    unsigned short int teamIDOffset = teamIDToOffset(teamID);
+    uint8_t teamIDOffset = teamIDToOffset(teamID);
     bool homeTeamWinsBoolean = winsToBool(homeTeamWins);
     this->gameDate = gameDateOffset;
     this->teamID = teamIDOffset;
@@ -99,12 +100,12 @@ string Record::offsetToDate(int offsetInDays)
  * @brief Function that converts team id to a offset from the lowest team ID found in the dataset for storage
  *
  * @param teamID read from file
- * @return unsigned short int
+ * @return uint8_t
  */
-unsigned short int Record::teamIDToOffset(int fileTeamID)
+uint8_t Record::teamIDToOffset(int fileTeamID)
 {
     int difference = fileTeamID - 1610612736;
-    unsigned short int offset = static_cast<unsigned short int>(difference);
+    uint8_t offset = difference;
     return (offset);
 }
 
@@ -114,7 +115,7 @@ unsigned short int Record::teamIDToOffset(int fileTeamID)
  * @param offset read from database
  * @return int
  */
-int Record::offsetToTeamID(unsigned short int offset)
+int Record::offsetToTeamID(uint8_t offset)
 {
     int difference = static_cast<int>(offset);
     return (1610612736 + difference);
@@ -145,6 +146,6 @@ int Record::boolWinsToInt(bool wins)
 
 void Record::print() const
 {
-    std::cout << "GAME_DATE_EST: " << gameDate << " TEAM_ID_home: " << teamID << " PTS_home: " << pts << " FG_PCT_home: " << fgPct << " FT_PCT_home: " << ftPct << " FG3_PCT_home: " << fg3Pct << " AST_home: " << ast << " REB_home: " << reb << " HOME_TEAM_WINS: " << homeTeamWins << endl;
+    std::cout << "GAME_DATE_EST: " << gameDate << " TEAM_ID_home: " << +teamID << " PTS_home: " << +pts << " FG_PCT_home: " << fgPct << " FT_PCT_home: " << ftPct << " FG3_PCT_home: " << fg3Pct << " AST_home: " << +ast << " REB_home: " << +reb << " HOME_TEAM_WINS: " << homeTeamWins << endl;
 
 }
