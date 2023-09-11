@@ -25,6 +25,8 @@ private:
     uchar *databaseCursor;
     // Dictionary to store the number of records in each block
     unordered_map<int,int> blockRecords;
+    // Keep track of number of records stored for Experiment 1
+    int recordsStored;
 
 public:
     // Constructor
@@ -42,10 +44,13 @@ public:
     uchar *readBlock(int blockID);
     // Function to print the content of blockRecords
     void printBlockRecords();
-    // Function to print the content of all blocks
-    vector<Record> readRecordsFromBlock();
+    // Function to print the content for a block
+    vector<Record> readRecordsFromBlock(int blockID);
+    vector<Record> readAllRecords();
     // Return the number of records for a blockID by looking up the structure
-    int getNumberOfRecords(int blockID);
+    int recordsInBlock(int blockID);
+    int getRecordsStored();
+    int getBlocksUsed();
 };
 
 #endif

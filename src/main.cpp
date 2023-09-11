@@ -44,7 +44,8 @@ bool compareRecords(const Record &a, const Record &b)
 int main()
 {
     vector<Record> records;
-    Storage storage(100000, 400);
+    uint databaseSize = 100 * 1024 * 1024;
+    Storage storage(databaseSize, 400);
     // Read the input file
     ifstream inputFile("../games.txt");
     if (!inputFile.is_open())
@@ -63,10 +64,10 @@ int main()
             continue;
         }
         // Comment out for final demonstration
-        if (lineNumber == 18)
-        {
-            break;
-        }
+        // if (lineNumber == 18)
+        // {
+        //     break;
+        // }
         istringstream iss(line);
         vector<string> fields;
         string field;
@@ -78,9 +79,27 @@ int main()
         // Assign values to each variable for the column before creating a Record object
         string gameDateStr = fields[0];
         uint8_t teamID = stoi(fields[1]);
-        uint8_t pts = stoi(fields[2]), ast = stoi(fields[6]), reb = stoi(fields[7]);
+        uint8_t pts, ast, reb;
+        float fgPct, ftPct, fg3Pct;
+        try
+        {
+            pts = stoi(fields[2]);
+            ast = stoi(fields[6]);
+            reb = stoi(fields[7]);
+            fgPct = stof(fields[3]);
+            ftPct = stof(fields[4]);
+            fg3Pct = stof(fields[5]);
+        }
+        catch (invalid_argument &e)
+        {
+            pts = 0;
+            ast = 0;
+            reb = 0;
+            fgPct = 0.0f;
+            ftPct = 0.0f; 
+            fg3Pct = 0.0f;
+        }
         int homeTeamWins = stoi(fields[8]);
-        float fgPct = stof(fields[3]), ftPct = stof(fields[4]), fg3Pct = stof(fields[5]);
         cout << "-----------------------------" << endl;
         cout << "Read from File: " << endl;
         cout << "Line Number: " << lineNumber << endl;
@@ -133,22 +152,28 @@ int main()
             cerr << "An error occured while storing record" << endl;
         }
     }
-    storage.printBlockRecords();
     vector<Record> recordsRead;
     uchar *dataBlock0 = storage.readBlock(0);
-    int block0Records = storage.getNumberOfRecords(0);
+    int block0Records = storage.recordsInBlock(0);
     cout << "Block 0 Records: " << block0Records << endl;
     uchar *dataBlock1 = storage.readBlock(1);
-    int block1Records = storage.getNumberOfRecords(1);
+    int block1Records = storage.recordsInBlock(1);
     cout << "Block 1 Records: " << block1Records << endl;
     cout << "Reading Block 0 From Database" << endl;
-    recordsRead = storage.readRecordsFromBlock();
-    
-    cout << "All records:" << endl;
-    for (const Record &record : recordsRead)
-    {
-        record.print();
-    }
-    
+    recordsRead = storage.readRecordsFromBlock(0);
+    cout << "------------------------------------------" << endl;
+    cout << "Experiment 1" << endl;
+    int recordsStored = storage.getRecordsStored();
+    cout << "Number of Records: " << recordsStored << endl;
+    cout << "Size of Record: " << sizeof(Record)  << " bytes" << endl;
+    cout << "Number of Records Per Block : 16" << endl;
+    cout << "Number of Blocks: " << storage.getBlocksUsed() << endl;
+    // cout << "Number of Records Stored Per Block: " << endl;
+    // storage.printBlockRecords();
+    // cout << "All records:" << endl;
+    // for (const Record &record : recordsRead)
+    // {
+    //     record.print();
+    // }
     return 1;
 }
