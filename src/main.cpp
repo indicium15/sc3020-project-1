@@ -5,11 +5,10 @@
 #include <tuple>
 #include <unordered_map>
 #include <string>
+#include <cstdint>
 #include <typeinfo>
 #include <chrono>
 #include <ctime>
-#include <iostream>
-#include <unordered_map>
 #include <algorithm>
 #include "storage.h"
 #include "record.h"
@@ -78,22 +77,21 @@ int main()
         }
         // Assign values to each variable for the column before creating a Record object
         string gameDateStr = fields[0];
-        int teamID = stoi(fields[1]);
-        unsigned short int pts = stoi(fields[2]), ast = stoi(fields[6]), reb = stoi(fields[7]);
+        uint8_t teamID = stoi(fields[1]);
+        uint8_t pts = stoi(fields[2]), ast = stoi(fields[6]), reb = stoi(fields[7]);
         int homeTeamWins = stoi(fields[8]);
         float fgPct = stof(fields[3]), ftPct = stof(fields[4]), fg3Pct = stof(fields[5]);
         cout << "-----------------------------" << endl;
         cout << "Read from File: " << endl;
         cout << "Line Number: " << lineNumber << endl;
         cout << "Game Date: " << gameDateStr << endl;
-        cout << "Team ID: " << teamID << endl;
-        cout << "PTS: " << pts << endl;
+        cout << "Team ID: " << +teamID << endl;
+        cout << "PTS: " << +pts << endl;
         cout << "FG Pct: " << fgPct << endl;
         cout << "FT Pct: " << ftPct << endl;
         cout << "FG3 Pct: " << fg3Pct << endl;
-        cout << "AST: " << ast << endl;
-        cout << "REB: " << reb << endl;
-        cout << "REB: " << reb << endl;
+        cout << "AST: " << +ast << endl;
+        cout << "REB: " << +reb << endl;
         cout << "Home Team Wins: " << homeTeamWins << endl;
         try
         {
@@ -103,14 +101,14 @@ int main()
             cout << "Line Number: " << lineNumber << endl;
             cout << "Game Date Written to Database: " << recordToInsert.gameDate << endl;
             // cout << "Game Date Reading from Database: " << recordToInsert.offsetToDate(recordToInsert.gameDate) << endl;
-            cout << "Team ID Written to Database: " << recordToInsert.teamID << endl;
+            cout << "Team ID Written to Database: " << +recordToInsert.teamID << endl;
             // cout << "Team ID Reading from Database: " << recordToInsert.offsetToTeamID(recordToInsert.teamID) << endl;
-            cout << "PTS: " << recordToInsert.pts << endl;
+            cout << "PTS: " << +recordToInsert.pts << endl;
             cout << "FG Pct: " << recordToInsert.fgPct << endl;
             cout << "FT Pct: " << recordToInsert.ftPct << endl;
             cout << "FG3 Pct: " << recordToInsert.fg3Pct << endl;
-            cout << "AST: " << recordToInsert.ast << endl;
-            cout << "REB: " << recordToInsert.reb << endl;
+            cout << "AST: " << +recordToInsert.ast << endl;
+            cout << "REB: " << +recordToInsert.reb << endl;
             cout << "Home Team Wins Written to Database: " << recordToInsert.homeTeamWins << endl;
             // cout << "Home Team Wins Reading from Database: " << recordToInsert.boolWinsToInt(recordToInsert.homeTeamWins) << endl;
             records.push_back(recordToInsert);
@@ -136,7 +134,7 @@ int main()
         }
     }
     storage.printBlockRecords();
-    std::vector<Record> recordsRead;
+    vector<Record> recordsRead;
     uchar *dataBlock0 = storage.readBlock(0);
     int block0Records = storage.getNumberOfRecords(0);
     cout << "Block 0 Records: " << block0Records << endl;
@@ -144,54 +142,13 @@ int main()
     int block1Records = storage.getNumberOfRecords(1);
     cout << "Block 1 Records: " << block1Records << endl;
     cout << "Reading Block 0 From Database" << endl;
-    for (int i = 0; i < block0Records; ++i)
-    {
-        // Calculate the offset within dataBlock0 for each record
-        int offset = i * sizeof(Record);
-
-        // Create a new Record object from the data at the calculated offset
-        //TODO FIGURE OUT WHY THE ASSISTS AND REBOUNDS HAVE SWITCHED PLACES
-        Record record(
-            *reinterpret_cast<int *>(dataBlock0 + offset),                     // gameDate
-            *reinterpret_cast<unsigned short int *>(dataBlock0 + offset + 4),  // teamID
-            *reinterpret_cast<unsigned short int *>(dataBlock0 + offset + 6),  // points
-            *reinterpret_cast<unsigned short int *>(dataBlock0 + offset + 10),  // rebounds
-            *reinterpret_cast<unsigned short int *>(dataBlock0 + offset + 8), // assists
-            *reinterpret_cast<float *>(dataBlock0 + offset + 12),              // fgPercentage
-            *reinterpret_cast<float *>(dataBlock0 + offset + 16),              // ftPercentage
-            *reinterpret_cast<float *>(dataBlock0 + offset + 20),              // fg3Percentage
-            *reinterpret_cast<bool *>(dataBlock0 + offset + 24)                // fg3Percentage
-        );
-
-        recordsRead.push_back(record);
-        // Add the record to the vector
-    }
-    // cout << "Reading Block 1 From Database" << endl;
-    // for (int i = 0; i < block1Records; ++i)
-    // {
-    //     // Calculate the offset within dataBlock0 for each record
-    //     int offset = i * sizeof(Record);
-
-    //     // Create a new Record object from the data at the calculated offset
-    //     Record record(
-    //         *reinterpret_cast<int *>(dataBlock1 + offset),                     // gameDate
-    //         *reinterpret_cast<unsigned short int *>(dataBlock1 + offset + 4),  // teamID
-    //         *reinterpret_cast<unsigned short int *>(dataBlock1 + offset + 6),  // points
-    //         *reinterpret_cast<unsigned short int *>(dataBlock1 + offset + 8),  // rebounds
-    //         *reinterpret_cast<unsigned short int *>(dataBlock1 + offset + 10), // assists
-    //         *reinterpret_cast<float *>(dataBlock1 + offset + 12),              // fgPercentage
-    //         *reinterpret_cast<float *>(dataBlock1 + offset + 16),              // ftPercentage
-    //         *reinterpret_cast<float *>(dataBlock1 + offset + 20),              // fg3Percentage
-    //         *reinterpret_cast<bool *>(dataBlock1 + offset + 24)                // fg3Percentage
-    //     );
-
-    //     recordsRead.push_back(record);
-    //     // Add the record to the vector
-    // }
+    recordsRead = storage.readRecordsFromBlock();
+    
+    cout << "All records:" << endl;
     for (const Record &record : recordsRead)
     {
         record.print();
     }
-
+    
     return 1;
 }
