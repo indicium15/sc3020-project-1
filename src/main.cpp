@@ -9,6 +9,7 @@
 #include <typeinfo>
 #include <chrono>
 #include <ctime>
+#include <algorithm>
 #include "storage.h"
 #include "record.h"
 
