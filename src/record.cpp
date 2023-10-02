@@ -16,10 +16,10 @@ using namespace std;
 // Used for calculating the date offset in the function dateToOffset()
 using days = chrono::duration<int, ratio<60 * 60 * 24>>;
 
-Record::Record(int date, uint8_t team, uint8_t points, uint8_t rebounds,
+Record::Record(unsigned short int recordID, int date, uint8_t team, uint8_t points, uint8_t rebounds,
                uint8_t assists, float fgPercentage, float ftPercentage, float fg3Percentage,
                bool homeWins)
-    : gameDate(date), teamID(team), pts(points), ast(assists), reb(rebounds),
+    : recordID(recordID), gameDate(date), teamID(team), pts(points), ast(assists), reb(rebounds),
       fgPct(fgPercentage), ftPct(ftPercentage), fg3Pct(fg3Percentage), homeTeamWins(homeWins){};
 
 /**
@@ -35,8 +35,9 @@ Record::Record(int date, uint8_t team, uint8_t points, uint8_t rebounds,
  * @param fg3Pct 
  * @param homeTeamWins 
  */
-Record::Record(string gameDateStr, int teamID, uint8_t pts, uint8_t reb, uint8_t ast, float fgPct, float ftPct, float fg3Pct, int homeTeamWins)
+Record::Record(unsigned short int recordID, string gameDateStr, int teamID, uint8_t pts, uint8_t reb, uint8_t ast, float fgPct, float ftPct, float fg3Pct, int homeTeamWins)
 {
+    this->recordID = recordID;
     int gameDateOffset = dateToOffset(gameDateStr);
     uint8_t teamIDOffset = teamIDToOffset(teamID);
     bool homeTeamWinsBoolean = winsToBool(homeTeamWins);
@@ -144,8 +145,12 @@ int Record::boolWinsToInt(bool wins)
     return (wins ? 1 : 0);
 }
 
+/**
+ * @brief Function that provides a print output of a record
+ * 
+ */
 void Record::print() const
 {
-    std::cout << "GAME_DATE_EST: " << gameDate << " TEAM_ID_home: " << +teamID << " PTS_home: " << +pts << " FG_PCT_home: " << fgPct << " FT_PCT_home: " << ftPct << " FG3_PCT_home: " << fg3Pct << " AST_home: " << +ast << " REB_home: " << +reb << " HOME_TEAM_WINS: " << homeTeamWins << endl;
+    std::cout << "RECORD ID: " << recordID << "GAME_DATE_EST: " << gameDate << " TEAM_ID_home: " << +teamID << " PTS_home: " << +pts << " FG_PCT_home: " << fgPct << " FT_PCT_home: " << ftPct << " FG3_PCT_home: " << fg3Pct << " AST_home: " << +ast << " REB_home: " << +reb << " HOME_TEAM_WINS: " << homeTeamWins << endl;
 
 }

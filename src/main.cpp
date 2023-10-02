@@ -58,16 +58,17 @@ int main()
     while (getline(inputFile, line))
     {
         lineNumber++;
+        uint8_t recordNumber = static_cast<uint8_t>(lineNumber - 1);
         // Skip the first line of the file (column headers)
         if (lineNumber == 1)
         {
             continue;
         }
         // Comment out for final demonstration
-        // if (lineNumber == 18)
-        // {
-        //     break;
-        // }
+        if (lineNumber == 18)
+        {
+            break;
+        }
         istringstream iss(line);
         vector<string> fields;
         string field;
@@ -114,7 +115,7 @@ int main()
         cout << "Home Team Wins: " << homeTeamWins << endl;
         try
         {
-            Record recordToInsert(gameDateStr, teamID, pts, reb, ast, fgPct, ftPct, fg3Pct, homeTeamWins);
+            Record recordToInsert(recordNumber,gameDateStr, teamID, pts, reb, ast, fgPct, ftPct, fg3Pct, homeTeamWins);
             cout << "-----------------------------" << endl;
             cout << "Record Information" << endl;
             cout << "Line Number: " << lineNumber << endl;
@@ -166,14 +167,14 @@ int main()
     int recordsStored = storage.getRecordsStored();
     cout << "Number of Records: " << recordsStored << endl;
     cout << "Size of Record: " << sizeof(Record)  << " bytes" << endl;
-    cout << "Number of Records Per Block : 16" << endl;
+    cout << "Number of Records Per Block : " << (storage.getBlockSize() / sizeof(Record)) << endl;
     cout << "Number of Blocks: " << storage.getBlocksUsed() << endl;
     // cout << "Number of Records Stored Per Block: " << endl;
     // storage.printBlockRecords();
-    // cout << "All records:" << endl;
-    // for (const Record &record : recordsRead)
-    // {
-    //     record.print();
-    // }
+    cout << "All records:" << endl;
+    for (const Record &record : recordsRead)
+    {
+        record.print();
+    }
     return 1;
 }

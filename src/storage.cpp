@@ -23,6 +23,13 @@ Storage::Storage(uint diskCapacity, uint blockSize)
     this->recordsStored = 0;
 }
 
+/**
+ * @brief Function that is used to store a record in the database object.
+ *
+ * @param record Record to allocate
+ * @return true if the allocation is succesfull
+ * @return false if there is an error in allocation
+ */
 bool Storage::allocateRecord(Record record)
 {
     // Error case: no blocks are available
@@ -52,6 +59,12 @@ bool Storage::allocateRecord(Record record)
     return true;
 }
 
+/**
+ * @brief Helper function that is used to find the memory address of the block with capacity for a record, or create a new block.
+ *
+ * @param recordSize size in bytes of the record to be allocated
+ * @return uchar* memory pointer to the available space in the database
+ */
 uchar *Storage::findAvailableBlock(int recordSize)
 {
     // Error case: no blocks are available
@@ -67,8 +80,6 @@ uchar *Storage::findAvailableBlock(int recordSize)
     // Case 2: A new block has to be allocated for the new record
     if (currentBlockSize + recordSize > blockSize && availableBlocks > 0)
     {
-        // Spanned implementation, go to the next block
-
         // Unspanned implementation, go past the remaining fields
         databaseCursor += (blockSize - currentBlockSize);
         // Change internal variables to acknowledge the new block
@@ -80,6 +91,12 @@ uchar *Storage::findAvailableBlock(int recordSize)
     }
 }
 
+/**
+ * @brief Function that copies a block to "RAM" and returns the memory address of the copied area
+ *
+ * @param blockID index of the block to copy
+ * @return uchar* pointer to the copy of the block data
+ */
 uchar *Storage::readBlock(int blockID)
 {
     // Calculate starting memory address of block from base address of database and block size
@@ -89,6 +106,9 @@ uchar *Storage::readBlock(int blockID)
     return copy;
 }
 
+/**
+ * @brief Function that prints the contents of the blockRecords attribute in the database
+ */
 void Storage::printBlockRecords()
 {
     for (const auto &pair : blockRecords)
@@ -97,6 +117,11 @@ void Storage::printBlockRecords()
     }
 }
 
+/**
+ * @brief Function that reads all the records in a database object
+ *
+ * @return vector<Record> array of all records read from memory
+ */
 vector<Record> Storage::readAllRecords()
 {
     vector<Record> records;
@@ -113,16 +138,18 @@ vector<Record> Storage::readAllRecords()
         for (int i = 0; i < numRecordsInBlock; ++i)
         {
             int offset = i * sizeof(Record);
+            // TODO Make changes here and in the main function
             Record record(
-                *reinterpret_cast<int *>(blockCursor + offset),         // gameDate
-                *reinterpret_cast<uint8_t *>(blockCursor + offset + 4), // teamID
-                *reinterpret_cast<uint8_t *>(blockCursor + offset + 5), // points
-                *reinterpret_cast<uint8_t *>(blockCursor + offset + 7), // rebounds
-                *reinterpret_cast<uint8_t *>(blockCursor + offset + 6), // assists
-                *reinterpret_cast<float *>(blockCursor + offset + 8),   // fgPercentage
-                *reinterpret_cast<float *>(blockCursor + offset + 12),  // ftPercentage
-                *reinterpret_cast<float *>(blockCursor + offset + 16),  // fg3Percentage
-                *reinterpret_cast<bool *>(blockCursor + offset + 20)    // homeTeamWins
+                *reinterpret_cast<float *>(blockCursor + offset),     // fgPct
+                *reinterpret_cast<int *>(blockCursor + offset + 4),     // ftPct
+                *reinterpret_cast<uint8_t *>(blockCursor + offset + 8), // fg3Pct
+                *reinterpret_cast<uint8_t *>(blockCursor + offset + 12), // gameDate
+                *reinterpret_cast<uint8_t *>(blockCursor + offset + 16), // recordID
+                *reinterpret_cast<uint8_t *>(blockCursor + offset + 18), // teamID
+                *reinterpret_cast<float *>(blockCursor + offset + 19),   // pts
+                *reinterpret_cast<float *>(blockCursor + offset + 20),  // ast
+                *reinterpret_cast<float *>(blockCursor + offset + 21),  // reb
+                *reinterpret_cast<bool *>(blockCursor + offset + 22)    // homeTeamWins
             );
             records.push_back(record);
         }
@@ -130,6 +157,12 @@ vector<Record> Storage::readAllRecords()
     return records;
 }
 
+/**
+ * @brief Function that reads all records from a given blockID
+ *
+ * @param blockID block ID to read records from
+ * @return vector<Record> of all records inside a block
+ */
 vector<Record> Storage::readRecordsFromBlock(int blockID)
 {
     vector<Record> records;
@@ -143,21 +176,28 @@ vector<Record> Storage::readRecordsFromBlock(int blockID)
     {
         int offset = i * sizeof(Record);
         Record record(
-            *reinterpret_cast<int *>(blockCursor + offset),         // gameDate
-            *reinterpret_cast<uint8_t *>(blockCursor + offset + 4), // teamID
-            *reinterpret_cast<uint8_t *>(blockCursor + offset + 5), // points
-            *reinterpret_cast<uint8_t *>(blockCursor + offset + 7), // rebounds
-            *reinterpret_cast<uint8_t *>(blockCursor + offset + 6), // assists
-            *reinterpret_cast<float *>(blockCursor + offset + 8),   // fgPercentage
-            *reinterpret_cast<float *>(blockCursor + offset + 12),  // ftPercentage
-            *reinterpret_cast<float *>(blockCursor + offset + 16),  // fg3Percentage
-            *reinterpret_cast<bool *>(blockCursor + offset + 20)    // homeTeamWins
+             *reinterpret_cast<float *>(blockCursor + offset),     // fgPct
+                *reinterpret_cast<int *>(blockCursor + offset + 4),     // ftPct
+                *reinterpret_cast<uint8_t *>(blockCursor + offset + 8), // fg3Pct
+                *reinterpret_cast<uint8_t *>(blockCursor + offset + 12), // gameDate
+                *reinterpret_cast<uint8_t *>(blockCursor + offset + 16), // recordID
+                *reinterpret_cast<uint8_t *>(blockCursor + offset + 18), // teamID
+                *reinterpret_cast<float *>(blockCursor + offset + 19),   // pts
+                *reinterpret_cast<float *>(blockCursor + offset + 20),  // ast
+                *reinterpret_cast<float *>(blockCursor + offset + 21),  // reb
+                *reinterpret_cast<bool *>(blockCursor + offset + 22)    // homeTeamWins
         );
         records.push_back(record);
     }
     return records;
 }
 
+/**
+ * @brief Returns the number of records stored in a block by looking up the blockRecords map
+ *
+ * @param blockID to find number of records for
+ * @return int number of records in block
+ */
 int Storage::recordsInBlock(int blockID)
 {
     auto find = blockRecords.find(blockID);
@@ -168,12 +208,26 @@ int Storage::recordsInBlock(int blockID)
     return 0;
 }
 
-int Storage::getRecordsStored(){
+// Getter functions for private class attributes
+
+int Storage::getRecordsStored()
+{
     return recordsStored;
 }
 
-int Storage::getBlocksUsed(){
+int Storage::getBlocksUsed()
+{
     return (currentBlock + 1);
+}
+
+int Storage::getAvailableBlocks()
+{
+    return availableBlocks;
+}
+
+int Storage::getBlockSize()
+{
+    return blockSize;
 }
 
 Storage::~Storage()

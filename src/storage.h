@@ -49,8 +49,11 @@ public:
     vector<Record> readAllRecords();
     // Return the number of records for a blockID by looking up the structure
     int recordsInBlock(int blockID);
+    // Getter functions for private attributes
     int getRecordsStored();
     int getBlocksUsed();
+    int getAvailableBlocks();
+    int getBlockSize();
 };
 
 #endif
