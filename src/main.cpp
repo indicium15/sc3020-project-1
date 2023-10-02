@@ -12,6 +12,7 @@
 #include <algorithm>
 #include "storage.h"
 #include "record.h"
+#include "b+tree_search.cpp"
 
 using namespace std;
 // Custom definition for days offset calculation
@@ -175,5 +176,20 @@ int main()
     // {
     //     record.print();
     // }
-    return 1;
+
+    //B+ Tree Search
+    BPTree tree = BPTree(storage.getBlocksUsed());;
+    float fgPct = 0.5;
+
+    // Search for some data in the tree
+    Node* result = tree.search(fgPct, false, 0);
+    if (result != nullptr)
+    {
+        std::cout << "Found key " << fgPct << " in node " << result << std::endl;
+    }
+    else
+    {
+        std::cout << "Key " << fgPct << " not found in tree" << std::endl;
+    }
+    return 0;
 }
