@@ -1,78 +1,236 @@
-#include "Storage.h"
+#include "storage.h"
+#include "record.h"
 #include <iostream>
+#include <string>
+#include <vector>
+#include <memory>
+#include <cstdlib>
+
 using namespace std;
+typedef unsigned int uint;
+typedef unsigned char uchar;
 
-// Global variables.
-uint diskCap = 500000000; // Allocated disk size
-uint blkSize = 500;
-// uint blkSize = 200;                 // Change according to Experiment
-uint availBlks = diskCap / blkSize; // Total available block remaining that we can use
-uint currBlkID = 0;                 // Keeps track of the number of blocks used
-uint currentBlkCap = 0;             // Keeps track of whether current block has enough space left
-float totalRecSize = 0.0;           // Sum of sizes of records that are packed into blocks.
-
-// Storage Constructor
-Storage::Storage(uint diskCap, uint blkSize)
+Storage::Storage(uint diskCapacity, uint blockSize)
 {
-    this->diskCap = diskCap;
-    this->blkSize = blkSize;
-    this->availBlks = diskCap / blkSize;
-    this->currBlkID = 0;
-    this->currentBlkCap = 0;
-    this->totalRecSize = 0;
+    this->diskCapacity = diskCapacity;
+    this->blockSize = blockSize;
+    this->currentBlock = 0;
+    this->currentBlockSize = 0;
+    this->availableBlocks = diskCapacity / blockSize;
+    this->baseAddress = static_cast<uchar *>(malloc(diskCapacity));
+    this->databaseCursor = baseAddress;
+    this->blockRecords[0] = 0;
+    this->recordsStored = 0;
 }
 
-uint insertRec(uint recSize)
+/**
+ * @brief Function that is used to store a record in the database object.
+ *
+ * @param record Record to allocate
+ * @return true if the allocation is succesfull
+ * @return false if there is an error in allocation
+ */
+bool Storage::allocateRecord(Record record)
 {
-
-    // Situation 1: Insufficient space for record in the current block, but there are free block(s) available to pack the record into.
-    if ((currentBlkCap + recSize) > blkSize)
+    // Error case: no blocks are available
+    if (availableBlocks == 0)
     {
-        availBlks--;
-        currBlkID++;
-        currentBlkCap = 0;
-        currentBlkCap += recSize;
+        return false;
     }
-
-    // Situation 2: Insufficient space for record in the current block and there are no free blocks to pack the record into.
-    else if (((currentBlkCap + recSize) > blkSize) && (availBlks == currBlkID))
+    // Try to find an available block and get the address of it
+    uchar *blockAddress = findAvailableBlock(sizeof(record));
+    if (!blockAddress)
     {
-        cout << "Cannot store record as there is not sufficient space on the disk." << endl;
+        cerr << "Failed to find an available block" << endl;
+        return false;
     }
-
-    // Situation 3: Sufficient space to pack the record into the current block.
-    else
+    // Copy the record data to the memory address
+    memcpy(blockAddress, &record, sizeof(record));
+    currentBlockSize += sizeof(record);
+    // Update blockRecords value to keep track
+    auto find = blockRecords.find(currentBlock);
+    if (find != blockRecords.end())
     {
-        currentBlkCap += recSize;
+        find->second += 1;
     }
-    totalRecSize += recSize;
-    return currBlkID;
+    recordsStored++;
+    // Move the cursor forward by the amount of memory allocated
+    databaseCursor = (blockAddress + sizeof(record));
+    return true;
 }
 
-uint databaseSize()
+/**
+ * @brief Helper function that is used to find the memory address of the block with capacity for a record, or create a new block.
+ *
+ * @param recordSize size in bytes of the record to be allocated
+ * @return uchar* memory pointer to the available space in the database
+ */
+uchar *Storage::findAvailableBlock(int recordSize)
 {
-    return totalRecSize / 1000000.0;
+    // Error case: no blocks are available
+    if (currentBlockSize + recordSize > blockSize && availableBlocks == 0)
+    {
+        return nullptr;
+    }
+    // Case 1: The new record can fit in an existing block
+    if ((currentBlockSize + recordSize) <= blockSize)
+    {
+        return databaseCursor;
+    }
+    // Case 2: A new block has to be allocated for the new record
+    if (currentBlockSize + recordSize > blockSize && availableBlocks > 0)
+    {
+        // Unspanned implementation, go past the remaining fields
+        databaseCursor += (blockSize - currentBlockSize);
+        // Change internal variables to acknowledge the new block
+        availableBlocks--;
+        currentBlock++;
+        currentBlockSize = 0;
+        blockRecords[currentBlock] = 0;
+        return databaseCursor;
+    }
 }
 
-uint availableBlk()
+/**
+ * @brief Function that copies a block to "RAM" and returns the memory address of the copied area
+ *
+ * @param blockID index of the block to copy
+ * @return uchar* pointer to the copy of the block data
+ */
+uchar *Storage::readBlock(int blockID)
 {
-    return availBlks;
+    // Calculate starting memory address of block from base address of database and block size
+    uchar *blockCursor = baseAddress + (blockID * blockSize);
+    uchar *copy = new uchar[400];
+    memcpy(copy, blockCursor, blockSize);
+    return copy;
 }
 
-uint numOfBlks()
+/**
+ * @brief Function that prints the contents of the blockRecords attribute in the database
+ */
+void Storage::printBlockRecords()
 {
-    return currBlkID + 1;
+    for (const auto &pair : blockRecords)
+    {
+        cout << "Block ID: " << pair.first << ", Num Records: " << pair.second << endl;
+    }
 }
 
-/*
-//Not sure if we need this. Don't uncomment this, program cannot run with this code.
-void deleteRec(uint recAddress, vector<tuple <uint8_t, tuple <void *, uint8_t>>> addMap, uint offset, uint size) {
-    for (int i = 0; i < addMap.size(); i++) {
-        if (recAddress == get<0>(addMap[i])) {
-            get<0>(get<1>(addMap[i])) = nullptr;
-            currentBlkCap += size;
-            totalRecSize -= size;
+/**
+ * @brief Function that reads all the records in a database object
+ *
+ * @return vector<Record> array of all records read from memory
+ */
+vector<Record> Storage::readAllRecords()
+{
+    vector<Record> records;
+    for (int blockID = 0; blockID <= currentBlock; ++blockID)
+    {
+
+        uchar *blockCursor = baseAddress + (blockID * blockSize); // starting memory address of the particular block
+        int numRecordsInBlock = recordsInBlock(blockID);
+        if (numRecordsInBlock == 0)
+        {
+            break;
+        }
+
+        for (int i = 0; i < numRecordsInBlock; ++i)
+        {
+            int offset = i * sizeof(Record);
+            // TODO Make changes here and in the main function
+            Record record(
+                *reinterpret_cast<float *>(blockCursor + offset),     // fgPct
+                *reinterpret_cast<int *>(blockCursor + offset + 4),     // ftPct
+                *reinterpret_cast<uint8_t *>(blockCursor + offset + 8), // fg3Pct
+                *reinterpret_cast<uint8_t *>(blockCursor + offset + 12), // gameDate
+                *reinterpret_cast<uint8_t *>(blockCursor + offset + 16), // recordID
+                *reinterpret_cast<uint8_t *>(blockCursor + offset + 18), // teamID
+                *reinterpret_cast<float *>(blockCursor + offset + 19),   // pts
+                *reinterpret_cast<float *>(blockCursor + offset + 20),  // ast
+                *reinterpret_cast<float *>(blockCursor + offset + 21),  // reb
+                *reinterpret_cast<bool *>(blockCursor + offset + 22)    // homeTeamWins
+            );
+            records.push_back(record);
         }
     }
+    return records;
 }
-*/
+
+/**
+ * @brief Function that reads all records from a given blockID
+ *
+ * @param blockID block ID to read records from
+ * @return vector<Record> of all records inside a block
+ */
+vector<Record> Storage::readRecordsFromBlock(int blockID)
+{
+    vector<Record> records;
+    uchar *blockCursor = baseAddress + (blockID * blockSize); // starting memory address of the particular block
+    int numRecordsInBlock = recordsInBlock(blockID);
+    if (numRecordsInBlock == 0)
+    {
+        return records;
+    }
+    for (int i = 0; i < numRecordsInBlock; ++i)
+    {
+        int offset = i * sizeof(Record);
+        Record record(
+             *reinterpret_cast<float *>(blockCursor + offset),     // fgPct
+                *reinterpret_cast<int *>(blockCursor + offset + 4),     // ftPct
+                *reinterpret_cast<uint8_t *>(blockCursor + offset + 8), // fg3Pct
+                *reinterpret_cast<uint8_t *>(blockCursor + offset + 12), // gameDate
+                *reinterpret_cast<uint8_t *>(blockCursor + offset + 16), // recordID
+                *reinterpret_cast<uint8_t *>(blockCursor + offset + 18), // teamID
+                *reinterpret_cast<float *>(blockCursor + offset + 19),   // pts
+                *reinterpret_cast<float *>(blockCursor + offset + 20),  // ast
+                *reinterpret_cast<float *>(blockCursor + offset + 21),  // reb
+                *reinterpret_cast<bool *>(blockCursor + offset + 22)    // homeTeamWins
+        );
+        records.push_back(record);
+    }
+    return records;
+}
+
+/**
+ * @brief Returns the number of records stored in a block by looking up the blockRecords map
+ *
+ * @param blockID to find number of records for
+ * @return int number of records in block
+ */
+int Storage::recordsInBlock(int blockID)
+{
+    auto find = blockRecords.find(blockID);
+    if (find != blockRecords.end())
+    {
+        return find->second;
+    }
+    return 0;
+}
+
+// Getter functions for private class attributes
+
+int Storage::getRecordsStored()
+{
+    return recordsStored;
+}
+
+int Storage::getBlocksUsed()
+{
+    return (currentBlock + 1);
+}
+
+int Storage::getAvailableBlocks()
+{
+    return availableBlocks;
+}
+
+int Storage::getBlockSize()
+{
+    return blockSize;
+}
+
+Storage::~Storage()
+{
+    free(baseAddress);
+}
