@@ -1,59 +1,45 @@
-#ifndef STORAGE_H
-#define STORAGE_H
-#include <string>
+//
+// Created by Chloe To on 26/9/22.
+//
+
+#ifndef CE4031_PROJECT_1_STORAGE_H
+#define CE4031_PROJECT_1_STORAGE_H
+
 #include <iostream>
-#include <unordered_map>
-#include "record.h"
+#include <vector>
+#include <cstring>
+using namespace std;
+
 typedef unsigned int uint;
-typedef unsigned char uchar;
 
-// Structure of a Database
-// Fields are packed into records, records are packed into blocks
-class Storage
+struct Record
 {
-private:
-    // Disk capacity between 100-500MB
-    uint diskCapacity;
-    // Block size of 400 bytes
-    uint blockSize = 400;
-    // Current block number that data is being written to
-    int currentBlock;
-    int currentBlockSize;
-    // Number of blocks that are available in the database
-    int availableBlocks;
-    uchar *baseAddress;
-    uchar *databaseCursor;
-    // Dictionary to store the number of records in each block
-    unordered_map<int,int> blockRecords;
-    // Keep track of number of records stored for Experiment 1
-    int recordsStored;
-
-public:
-    // Constructor
-    Storage(uint diskCapacity, uint blockSize);
-    // Destructor
-    ~Storage();
-    // TODO: Write a function to parse file data and return record object
-    // Allocate memory to a block
-    bool allocateBlock();
-    // Allocate memory to a record
-    bool allocateRecord(Record record);
-    // Function to find available block while allocating records
-    uchar *findAvailableBlock(int size);
-    // Function to read a block
-    uchar *readBlock(int blockID);
-    // Function to print the content of blockRecords
-    void printBlockRecords();
-    // Function to print the content for a block
-    vector<Record> readRecordsFromBlock(int blockID);
-    vector<Record> readAllRecords();
-    // Return the number of records for a blockID by looking up the structure
-    int recordsInBlock(int blockID);
-    // Getter functions for private attributes
-    int getRecordsStored();
-    int getBlocksUsed();
-    int getAvailableBlocks();
-    int getBlockSize();
+    string gameDateStr;
+    uint teamID, pts, ast, reb;
+    float fgPct, ftPct, fg3Pct;
+    int homeTeamWins;
 };
 
-#endif
+class Storage
+{
+
+
+
+private:
+    uint diskCap;
+    uint blkSize;
+    uint availBlks;
+    uint currBlkID;
+    uint blkNum;
+    uint currentBlkCap;
+    float totalRecSize;
+
+public:
+    Storage(uint diskCap, uint blkSize);
+    uint insertRec(uint recSize);
+    void deleteRec(uint recAddress, vector<tuple<uint, tuple<void *, uint>>> mappingTable, uint offset, uint size);
+    uint numOfBlks();
+    uint databaseSize();
+};
+
+#endif // CE4031_PROJECT_1_STORAGE_H
