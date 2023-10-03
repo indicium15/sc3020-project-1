@@ -10,7 +10,7 @@ struct Address
   uint8_t offset;
 };
 
-// Defines a single movie record (read from data file).
+// Defines a single record (read from data file).
 struct Record{
     float fg_pct_home;
     float ft_pct_home;
