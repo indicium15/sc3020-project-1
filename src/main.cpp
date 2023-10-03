@@ -1,6 +1,3 @@
-#include "record.h"
-#include "record.cpp"
-#include "Storage.h"
 #include "Storage.cpp"
 #include "b+tree.hpp"
 #include "b+tree_insert.cpp"
