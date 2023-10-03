@@ -1,196 +1,167 @@
+#include "Storage.cpp"
+#include "b+tree.hpp"
+#include "b+tree_insert.cpp"
+#include "b+tree_search.cpp"
+#include "b+tree_display.cpp"
+#include "b+tree_delete.cpp"
+#include <string>
+#include <cstring>
+#include <sstream>
+#include <tuple>
+#include <vector>
 #include <iostream>
 #include <fstream>
-#include <sstream>
-#include <vector>
-#include <tuple>
-#include <unordered_map>
-#include <string>
-#include <cstdint>
-#include <typeinfo>
-#include <chrono>
-#include <ctime>
-#include <algorithm>
-#include "storage.h"
-#include "record.h"
-#include "b+tree_search.cpp"
-
 using namespace std;
-// Custom definition for days offset calculation
-using days = chrono::duration<int, ratio<60 * 60 * 24>>;
-typedef unsigned int uint;
-
-/**
- * @brief Sorting function used for putting records in chronological order. If the game dates are same, use teamID to order the records
- *
- * @param a
- * @param b
- * @return true
- * @return false
- */
-bool compareRecords(const Record &a, const Record &b)
-{
-    // Comapre dates of games
-    if (a.gameDate < b.gameDate)
-    {
-        return true;
-    }
-    // If dates are the same, compare by teamID
-    else if (a.gameDate == b.gameDate)
-    {
-        return a.teamID < b.teamID;
-    }
-    return false;
-}
 
 int main()
 {
-    vector<Record> records;
-    uint databaseSize = 100 * 1024 * 1024;
-    Storage storage(databaseSize, 400);
-    // Read the input file
-    ifstream inputFile("../games.txt");
-    if (!inputFile.is_open())
-    {
-        cerr << "Error: unable to open the file./n";
-        return 1;
-    }
+    int blk = 0;       // blkPos Keep track of size of all blocks created
+    int prevBlkID = 0; // prevBlockID Keep track of previous block ID
+    int size = 0;      // prev Keep track of size of record inserted and help update offset
+    int offset = 0;
+    int count = 0; // logicCount Keep track of number of entry in the address map
+    int tracker = 0;
+
+    unsigned char *disk = nullptr;
+    disk = new unsigned char[diskCap];
+    unsigned char *blkPtr = nullptr;
+    Record games;
+    vector<Record> gamesVector;
+
+    // blkSize = 200; // Change according to Experiment
+    blkSize = 400;
+    blkPtr = disk;
+
+    // Map address
+    vector<tuple<unsigned char, void *>> addMap;
     string line;
-    int lineNumber = 0;
-    while (getline(inputFile, line))
+
+    // Import data
+    ifstream filename("games.txt");
+    filename.ignore(10000, '\n'); // Remove header
+
+    // Read data line by line
+    while (getline(filename, line))
     {
-        lineNumber++;
-        uint8_t recordNumber = static_cast<uint8_t>(lineNumber - 1);
-        // Skip the first line of the file (column headers)
-        if (lineNumber == 1)
+
+        stringstream linestream(line);
+        string r;
+        getline(linestream, r, '\t');
+        // strcpy(games.gameDateStr, r.c_str());
+        linestream >> games.gameDateStr >> games.teamID >> games.pts >> games.fgPct >> games.ftPct >> games.fg3Pct >> games.ast >> games.reb >> games.homeTeamWins;
+        // Insert record to storage
+        int currBlkID = insertRec(sizeof(games));
+
+        gamesVector.push_back(games);
+
+        ////Logics to keep track of pointers
+        // New block is created. Set offset to 0 and update prevBlkID
+        if (prevBlkID != currBlkID)
         {
-            continue;
-        }
-        // Comment out for final demonstration
-        if (lineNumber == 18)
-        {
-            break;
-        }
-        istringstream iss(line);
-        vector<string> fields;
-        string field;
-        // Split the line into an array of strings separated by the \t delimiter
-        while (getline(iss, field, '\t'))
-        {
-            fields.push_back(field);
-        }
-        // Assign values to each variable for the column before creating a Record object
-        string gameDateStr = fields[0];
-        uint8_t teamID = stoi(fields[1]);
-        uint8_t pts, ast, reb;
-        float fgPct, ftPct, fg3Pct;
-        try
-        {
-            pts = stoi(fields[2]);
-            ast = stoi(fields[6]);
-            reb = stoi(fields[7]);
-            fgPct = stof(fields[3]);
-            ftPct = stof(fields[4]);
-            fg3Pct = stof(fields[5]);
-        }
-        catch (invalid_argument &e)
-        {
-            pts = 0;
-            ast = 0;
-            reb = 0;
-            fgPct = 0.0f;
-            ftPct = 0.0f; 
-            fg3Pct = 0.0f;
-        }
-        int homeTeamWins = stoi(fields[8]);
-        cout << "-----------------------------" << endl;
-        cout << "Read from File: " << endl;
-        cout << "Line Number: " << lineNumber << endl;
-        cout << "Game Date: " << gameDateStr << endl;
-        cout << "Team ID: " << +teamID << endl;
-        cout << "PTS: " << +pts << endl;
-        cout << "FG Pct: " << fgPct << endl;
-        cout << "FT Pct: " << ftPct << endl;
-        cout << "FG3 Pct: " << fg3Pct << endl;
-        cout << "AST: " << +ast << endl;
-        cout << "REB: " << +reb << endl;
-        cout << "Home Team Wins: " << homeTeamWins << endl;
-        try
-        {
-            Record recordToInsert(recordNumber,gameDateStr, teamID, pts, reb, ast, fgPct, ftPct, fg3Pct, homeTeamWins);
-            cout << "-----------------------------" << endl;
-            cout << "Record Information" << endl;
-            cout << "Line Number: " << lineNumber << endl;
-            cout << "Game Date Written to Database: " << recordToInsert.gameDate << endl;
-            // cout << "Game Date Reading from Database: " << recordToInsert.offsetToDate(recordToInsert.gameDate) << endl;
-            cout << "Team ID Written to Database: " << +recordToInsert.teamID << endl;
-            // cout << "Team ID Reading from Database: " << recordToInsert.offsetToTeamID(recordToInsert.teamID) << endl;
-            cout << "PTS: " << +recordToInsert.pts << endl;
-            cout << "FG Pct: " << recordToInsert.fgPct << endl;
-            cout << "FT Pct: " << recordToInsert.ftPct << endl;
-            cout << "FG3 Pct: " << recordToInsert.fg3Pct << endl;
-            cout << "AST: " << +recordToInsert.ast << endl;
-            cout << "REB: " << +recordToInsert.reb << endl;
-            cout << "Home Team Wins Written to Database: " << recordToInsert.homeTeamWins << endl;
-            // cout << "Home Team Wins Reading from Database: " << recordToInsert.boolWinsToInt(recordToInsert.homeTeamWins) << endl;
-            records.push_back(recordToInsert);
-        }
-        catch (...)
-        {
-            cerr << "Error parsing line number: " << lineNumber << endl;
-        }
-    }
-    inputFile.close();
-    cout << "Sorted Records" << endl;
-    sort(records.begin(), records.end(), compareRecords);
-    for (const Record &record : records)
-    {
-        record.print();
-        if (storage.allocateRecord(record))
-        {
-            // cout << "Record allocated sucessfully." << endl;
+            offset = 0;
+            size = sizeof(games);
+            ;
+            prevBlkID = currBlkID;
+            tracker = 0;
         }
         else
         {
-            cerr << "An error occured while storing record" << endl;
+            if (tracker == 0)
+            {
+                offset = 0;
+                size = sizeof(games);
+            }
+            else
+            { // Update offset
+                offset += size;
+            }
         }
-    }
-    vector<Record> recordsRead;
-    uchar *dataBlock0 = storage.readBlock(0);
-    int block0Records = storage.recordsInBlock(0);
-    cout << "Block 0 Records: " << block0Records << endl;
-    uchar *dataBlock1 = storage.readBlock(1);
-    int block1Records = storage.recordsInBlock(1);
-    cout << "Block 1 Records: " << block1Records << endl;
-    cout << "Reading Block 0 From Database" << endl;
-    recordsRead = storage.readRecordsFromBlock(0);
-    cout << "------------------------------------------" << endl;
-    cout << "Experiment 1" << endl;
-    int recordsStored = storage.getRecordsStored();
-    cout << "Number of Records: " << recordsStored << endl;
-    cout << "Size of Record: " << sizeof(Record)  << " bytes" << endl;
-    cout << "Number of Records Per Block : " << (storage.getBlockSize() / sizeof(Record)) << endl;
-    cout << "Number of Blocks: " << storage.getBlocksUsed() << endl;
-    // cout << "Number of Records Stored Per Block: " << endl;
-    // storage.printBlockRecords();
-    // cout << "All records:" << endl;
-    // for (const Record &record : recordsRead)
-    // {
-    //     record.print();
-    // }
 
-    //B+ Tree Search
-    BPTree tree = BPTree(storage.getBlocksUsed());;
-    float fgPct = 0.5;
+        blk = (currBlkID * blkSize); // Get current size of all block
+        blkPtr = (unsigned char *)disk + blk;
+        tuple<void *, unsigned char> blockTable(&blkPtr, offset);
 
-    // Search for some data in the tree
-    Node* result = tree.search(fgPct, false, 0);
-    if (result != nullptr)
-    {
-        std::cout << "Found key " << fgPct << " in node " << result << std::endl;
+        // Add the offset to the physical address
+        void *physicalAddress = blkPtr + offset;
+
+        // Update Mapping Table
+        tuple<unsigned char, void *> tableEntry(count, physicalAddress);
+        addMap.push_back(tableEntry);
+        count++;
+
+        // Store Record to physical address
+        memcpy(physicalAddress, &games, sizeof(games));
+
+        tracker++;
     }
-    else
+
+    filename.close();
+
+    vector<tuple<unsigned char, void *>>::iterator iterator;
+
+    // Experiment 1//
+    cout << "=============================================" << endl;
+    cout << "| Experiment 1" << endl;
+    cout << "| -------------------" << endl;
+    cout << "| Fixed block size: " + to_string(blkSize) + "B" << endl;
+    cout << "| Number of available blocks: " + to_string(availableBlk()) << endl;
+    cout << "| Size of database: " + to_string(databaseSize()) + "MB" << endl;
+    cout << "| Number of blocks used:  " + to_string(numOfBlks()) << endl;
+    cout << "=============================================" << endl;
+
+    // Experiment 2//
+    BPTree bplustree = BPTree(blkSize);
+    for (iterator = addMap.begin(); iterator != addMap.end(); ++iterator)
     {
-        std::cout << "Key " << fgPct << " not found in tree" << std::endl;
+        void *blkAdd = get<1>(*iterator);
+        float fgPct = (*(Record *)blkAdd).fgPct;
+        data_keys record;
+        record.key_value = fgPct;
+        record.add.push_back(blkAdd);
+        bplustree.insertData(record);
     }
-    return 0;
+    cout << "| Experiment 2" << endl;
+    cout << "| -------------------" << endl;
+    cout << "| Parameter n of B+ Tree: " + to_string(bplustree.getMaxDegree(blkSize)) << endl;
+    cout << "| Number of nodes:  " + to_string(bplustree.getnumOfNodes()) << endl;
+    cout << "| Height of B+ Tree  " + to_string(bplustree.treeHeight(bplustree.getRoot())) << endl;
+    bplustree.displayTree(bplustree.getRoot(), false); // if false, print only the root and first node
+    cout << "=============================================" << endl;
+
+    // Experiment 3//
+    cout << "| Experiment 3" << endl;
+    cout << "| -------------------" << endl;
+    bplustree.search(0.5, true, 0);
+    cout << "=============================================" << endl;
+
+    // Experiment 4//
+    cout << "| Experiment 4" << endl;
+    cout << "| -------------------" << endl;
+    // bplustree.search(0.6, true, 0.4);
+    cout << "=============================================" << endl;
+
+    // Experiment 5//
+    data_keys recordToDelete;
+    recordToDelete.key_value = 0.35;
+    cout << "| Experiment 5:" << endl;
+    cout << "| -------------------" << endl;
+    cout << "| Deleting records where fgPct = " << recordToDelete.key_value << endl;
+    int numNodeBeforeRemoval = bplustree.getnumOfNodes();
+    cout << "| Number of nodes before removal: " << numNodeBeforeRemoval << endl;
+    int numNodeMerged = bplustree.removeData(recordToDelete);
+    int numNodeAfterRemoval = bplustree.getnumOfNodes();
+    int numNodeRemoved = numNodeBeforeRemoval - numNodeAfterRemoval;
+    cout << "| Number of Nodes deleted: " << numNodeRemoved << endl;
+    cout << "| Number of Nodes in updated B+ Tree: " << numNodeAfterRemoval << endl;
+    cout << "| Height of updated B+ Tree: " << bplustree.treeHeight(bplustree.getRoot()) << endl;
+    bplustree.displayTree(bplustree.getRoot(), false);
+    cout << "=============================================" << endl;
+
+    // clean up
+    disk = NULL;
+    blkPtr = nullptr;
+    gamesVector.clear();
+    addMap.clear();
+    delete disk;
+    delete blkPtr;
 }
