@@ -12,7 +12,8 @@
 #include <algorithm>
 #include "storage.h"
 #include "record.h"
-#include "b+tree_search.cpp"
+#include "types.h"
+// #include "b+tree_search.cpp"
 
 using namespace std;
 // Custom definition for days offset calculation
@@ -45,6 +46,7 @@ bool compareRecords(const Record &a, const Record &b)
 int main()
 {
     vector<Record> records;
+    unordered_map<float, vector<Address>> recordMap;
     uint databaseSize = 100 * 1024 * 1024;
     Storage storage(databaseSize, 400);
     // Read the input file
@@ -102,35 +104,35 @@ int main()
             fg3Pct = 0.0f;
         }
         int homeTeamWins = stoi(fields[8]);
-        cout << "-----------------------------" << endl;
-        cout << "Read from File: " << endl;
-        cout << "Line Number: " << lineNumber << endl;
-        cout << "Game Date: " << gameDateStr << endl;
-        cout << "Team ID: " << +teamID << endl;
-        cout << "PTS: " << +pts << endl;
-        cout << "FG Pct: " << fgPct << endl;
-        cout << "FT Pct: " << ftPct << endl;
-        cout << "FG3 Pct: " << fg3Pct << endl;
-        cout << "AST: " << +ast << endl;
-        cout << "REB: " << +reb << endl;
-        cout << "Home Team Wins: " << homeTeamWins << endl;
+        std::cout << "-----------------------------" << endl;
+        std::cout << "Read from File: " << endl;
+        std::cout << "Line Number: " << lineNumber << endl;
+        std::cout << "Game Date: " << gameDateStr << endl;
+        std::cout << "Team ID: " << +teamID << endl;
+        std::cout << "PTS: " << +pts << endl;
+        std::cout << "FG Pct: " << fgPct << endl;
+        std::cout << "FT Pct: " << ftPct << endl;
+        std::cout << "FG3 Pct: " << fg3Pct << endl;
+        std::cout << "AST: " << +ast << endl;
+        std::cout << "REB: " << +reb << endl;
+        std::cout << "Home Team Wins: " << homeTeamWins << endl;
         try
         {
-            Record recordToInsert(recordNumber,gameDateStr, teamID, pts, reb, ast, fgPct, ftPct, fg3Pct, homeTeamWins,0,0);
-            cout << "-----------------------------" << endl;
-            cout << "Record Information" << endl;
-            cout << "Line Number: " << lineNumber << endl;
-            cout << "Game Date Written to Database: " << recordToInsert.gameDate << endl;
+            Record recordToInsert = Record(recordNumber,gameDateStr, teamID, pts, reb, ast, fgPct, ftPct, fg3Pct, homeTeamWins,0,0);
+            std::cout << "-----------------------------" << endl;
+            std::cout << "Record Information" << endl;
+            std::cout << "Line Number: " << lineNumber << endl;
+            std::cout << "Game Date Written to Database: " << recordToInsert.gameDate << endl;
             // cout << "Game Date Reading from Database: " << recordToInsert.offsetToDate(recordToInsert.gameDate) << endl;
-            cout << "Team ID Written to Database: " << +recordToInsert.teamID << endl;
+            std::cout << "Team ID Written to Database: " << +recordToInsert.teamID << endl;
             // cout << "Team ID Reading from Database: " << recordToInsert.offsetToTeamID(recordToInsert.teamID) << endl;
-            cout << "PTS: " << +recordToInsert.pts << endl;
-            cout << "FG Pct: " << recordToInsert.fgPct << endl;
-            cout << "FT Pct: " << recordToInsert.ftPct << endl;
-            cout << "FG3 Pct: " << recordToInsert.fg3Pct << endl;
-            cout << "AST: " << +recordToInsert.ast << endl;
-            cout << "REB: " << +recordToInsert.reb << endl;
-            cout << "Home Team Wins Written to Database: " << recordToInsert.homeTeamWins << endl;
+            std::cout << "PTS: " << +recordToInsert.pts << endl;
+            std::cout << "FG Pct: " << recordToInsert.fgPct << endl;
+            std::cout << "FT Pct: " << recordToInsert.ftPct << endl;
+            std::cout << "FG3 Pct: " << recordToInsert.fg3Pct << endl;
+            std::cout << "AST: " << +recordToInsert.ast << endl;
+            std::cout << "REB: " << +recordToInsert.reb << endl;
+            std::cout << "Home Team Wins Written to Database: " << recordToInsert.homeTeamWins << endl;
             // cout << "Home Team Wins Reading from Database: " << recordToInsert.boolWinsToInt(recordToInsert.homeTeamWins) << endl;
             records.push_back(recordToInsert);
         }
@@ -163,6 +165,17 @@ int main()
         {
             //record.print();
             // cout << "Record allocated sucessfully." << endl;
+            //TODO: PRESENT - BLOCK ADDRESS IS NULL WHEN STORING IN THE DATABASE. NEED TO CORRECT THIS!
+            if(recordMap.find(record.fgPct) == recordMap.end())
+            {
+                vector<Address> addresses;
+                addresses.push_back(Address(record.blockAddress, record.offset));
+                recordMap[record.fgPct] = addresses;
+            }
+            else
+            {
+                recordMap[record.fgPct].push_back(Address(record.blockAddress, record.offset));
+            }
         }
         else
         {
@@ -188,6 +201,19 @@ int main()
     cout << "Number of Blocks: " << storage.getBlocksUsed() << endl;
     cout << "Number of Records Stored Per Block: " << endl;
     storage.printBlockRecords();
+    cout << "------------------------------------------" << endl;
+    for (const auto& pair : recordMap) {
+        std::cout << "Key: " << pair.first << ", Value: " << endl;
+        for(const Address& address: pair.second)
+        {
+            if (address.blockAddress != nullptr) {
+            std::cout << "Block Address: " << address.blockAddress << std::endl;
+            std::cout << "Offset: " << address.offset << std::endl;
+        } else {
+            std::cout << "Block Address is null." << std::endl;
+        }
+        }
+    }
     cout << "All records:" << endl;
     for (const Record record : recordsRead)
     {

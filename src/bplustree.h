@@ -6,15 +6,15 @@
 
 using namespace std;
 
-class Address{
-    private:
-        void* blockAddress;
-        int offset;
-    public:
-        Address(Record record);
-        Address();
-        ~Address();
-};
+// class Address{
+//     private:
+//         void* blockAddress;
+//         int offset;
+//     public:
+//         Address(Record record);
+//         Address();
+//         ~Address();
+// };
 
 class Node{
     private:
