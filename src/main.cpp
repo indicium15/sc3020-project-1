@@ -68,7 +68,7 @@ int main()
             continue;
         }
         // Comment out for final demonstration
-        if (lineNumber == 100)
+        if (lineNumber == 5)
         {
             break;
         }
@@ -163,19 +163,7 @@ int main()
     {
         if (storage.allocateRecord(record))
         {
-            //record.print();
-            // cout << "Record allocated sucessfully." << endl;
-            //TODO: PRESENT - BLOCK ADDRESS IS NULL WHEN STORING IN THE DATABASE. NEED TO CORRECT THIS!
-            if(recordMap.find(record.fgPct) == recordMap.end())
-            {
-                vector<Address> addresses;
-                addresses.push_back(Address(record.blockAddress, record.offset));
-                recordMap[record.fgPct] = addresses;
-            }
-            else
-            {
-                recordMap[record.fgPct].push_back(Address(record.blockAddress, record.offset));
-            }
+            cout << "Record allocated " << endl;
         }
         else
         {
@@ -201,6 +189,21 @@ int main()
     cout << "Number of Blocks: " << storage.getBlocksUsed() << endl;
     cout << "Number of Records Stored Per Block: " << endl;
     storage.printBlockRecords();
+    cout << "All records:" << endl;
+    for (const Record record : recordsRead)
+    {
+        if(recordMap.find(record.fgPct) == recordMap.end())
+        {
+            vector<Address> addresses;
+            addresses.push_back(Address(record.blockAddress, record.offset));
+            recordMap[record.fgPct] = addresses;
+        }
+        else
+        {
+            recordMap[record.fgPct].push_back(Address(record.blockAddress, record.offset));
+        }
+        //record.print();
+    }
     cout << "------------------------------------------" << endl;
     for (const auto& pair : recordMap) {
         std::cout << "Key: " << pair.first << ", Value: " << endl;
@@ -213,10 +216,5 @@ int main()
             std::cout << "Block Address is null." << std::endl;
         }
         }
-    }
-    cout << "All records:" << endl;
-    for (const Record record : recordsRead)
-    {
-        record.print();
     }
 }
