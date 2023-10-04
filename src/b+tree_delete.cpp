@@ -7,80 +7,66 @@
 
 using namespace std;
 
-/**
- * @brief
- * Remove key from tree.
- * @param x Key to be removed.
- * @return int Number of removed nodes.
- */
-
 int BPTree::removeData(data_keys x)
 {
   // need to check root is not null, if not null then we can assign current node to root and start traversing to leaf nodes
   if (root != nullptr)
   {
-    Node *parent;
-    Node *current = root;
-    //
-    int lSPtr, rSPtr;
+    Node *parent; //initiialise parent node
+    Node *current = root; //initialise current node, will change as we traverse down the tree
+    int lSPtr, rSPtr; //initialise left and right sibling pointers
 
     /*Once we assigned the root node to current, we can start traversing the tree.
     We do this by setting a parent node to current Node and increase the size until you reach the leaf Node
     */
     while (!current->isLeaf)
     {
-      parent = current;
-      int j;
-      if (x.key_value >= current->key[current->size - 1].key_value)
+      parent = current; //set parent node to current node
+      int j; //initialise j for the position of the key
+      if (x.key_value >= current->key[current->size - 1].key_value) // if the key value is greater than the last key value in the current node
       {
-        j = current->size;
+        j = current->size; // set j to the size of the current node
       }
-      else
+      else // else, we traverse down the tree to find the key value
       {
-        j = 0;
-        while (x.key_value >= current->key[j].key_value)
+        j = 0; // set j to 0 to access the first key value
+        while (x.key_value >= current->key[j].key_value) // while the key value is greater than the current key value
         {
-          j++;
+          j++; // increment j
         }
       }
-      lSPtr = j - 1;
-      rSPtr = j + 1;
-      // go down to the child node until you reach a leaf node
-      current = current->children[j];
+      lSPtr = j - 1; // set left sibling pointer to j - 1
+      rSPtr = j + 1; // set right sibling pointer to j + 1
+      current = current->children[j]; // go down to the child node until you reach a leaf node
     }
 
-    // Can we replace this by the search query fn? We search for the key value if not found key does not exist. int k represents the position of the current node
+    // Leaf node is found.
     int k = 0;
-    while (x.key_value > current->key[k].key_value)
-      k += 1;
-    // Key does not exist in the tree.
-    if (x.key_value != current->key[k].key_value)
+    while (x.key_value > current->key[k].key_value) // while the key value is greater than the current key value
+      k += 1; // increment k
+    
+    if (x.key_value != current->key[k].key_value) // if key does not exist in the tree.
     {
-      ////cout << "key is not found!" << endl;
       return 0;
     }
 
-    // Delete the key by shifting all elements that are above the key down.
+    // If key exists in the tree, delete the key.
     for (int i = k; i < current->size; i++)
     {
-      current->key[i] = current->key[i + 1];
+      current->key[i] = current->key[i + 1]; // shift the key down
     }
-    current->size--;
-
+    current->size--; // decrease the size of the current node
     if (current == root) // If it is root node, make all ptr null.
     {
-      ////cout << "Deleted " << x.key_value << " "
-      //     << "from leaf node successfully" << endl;
-      numOfNodes--;
+      numOfNodes--; // decrease the number of nodes
       int m = 0;
-      while (m < maxDegree + 1)
+      while (m < maxDegree + 1) // maxDegree + 1 is maximum number of pointers a node can have
       {
-        current->children[m] = nullptr;
+        current->children[m] = nullptr; // set all children to null because we deleted the root node
       }
 
       if (current->size == 0) // If all keys are deleted.
       {
-        ////cout << "Tree is deleted!" << endl;
         delete[] current->key;
         delete[] current->children;
         delete current;
@@ -89,42 +75,35 @@ int BPTree::removeData(data_keys x)
       }
       return 0;
     }
-
-    // Shift the pointer to the adjacent leaf node.
+    // Delete pointers associated with deleted key.
     current->children[current->size + 1] = nullptr;
     current->children[current->size] = current->children[current->size + 1];
-    // cout << "Deleted " << x.key_value << " "
-    //<< " from leaf node successfully" //<< endl;
     numOfNodes -= 1;
 
     // Update parent if necessary (When position of key in leaf node to be removed is 0).
     if (k == 0)
     {
-      // cout << "Update parent!" << endl;
       updateParent(current, current->key[0]);
     }
     // There are sufficient keys in node.
     if (current->size >= (maxDegree + 1) / 2)
     {
-      // cout << "Sufficient nodes!" << endl;
       return 1;
     }
 
-    // cout << "Underflow condition!" << endl;
     //  Underflow condition.
     //  Try to transfer a key from sibling node.
     //  Check if left sibling exists.
     if (lSPtr >= 0)
     {
       Node *lNode = parent->children[lSPtr];
-      // cout << "Shift from left sibling!" << endl;
-      //  Check if it is possible to transfer.
+      //  Check if it is possible to transfer from left node.
       if (lNode->size >= (maxDegree + 1) / 2 + 1)
       {
         // Create space for transferring key.
         for (int i = current->size; i > 0; i--)
         {
-          current->key[i] = current->key[i - 1];
+          current->key[i] = current->key[i - 1]; // shift the key down
         }
         // Update pointer to the next node.
         current->size++;
@@ -148,8 +127,7 @@ int BPTree::removeData(data_keys x)
     if (rSPtr <= parent->size)
     {
       Node *rNode = parent->children[rSPtr];
-      // cout << "Shift keys from right node!" << endl;
-      //  Check if it is possible to transfer.
+      //  Check if it is possible to transfer from right node.
       if (rNode->size >= (maxDegree + 1) / 2 + 1)
       {
 
@@ -180,7 +158,6 @@ int BPTree::removeData(data_keys x)
     // If left sibling exists, merge with it.
     if (lSPtr >= 0)
     {
-      // cout << "We merged with left sibling!" << endl;
       Node *lNode = parent->children[lSPtr];
 
       // Transfer all keys to left sibling.
@@ -204,7 +181,6 @@ int BPTree::removeData(data_keys x)
       delete[] current->key;
       delete[] current->children;
       delete current;
-      // cout << "Deleted 1" << endl;
       //  Returns total deleted = 1 + those deleted when merging
       return 1 + numNodeMerged;
     }
@@ -212,7 +188,6 @@ int BPTree::removeData(data_keys x)
     else if (rSPtr <= parent->size)
     {
       // create a right node to the current node that is represented by
-      // cout << "Merged with right sibling!" << endl;
       Node *rNode = parent->children[rSPtr];
 
       // Transfer all keys to current.
@@ -235,7 +210,6 @@ int BPTree::removeData(data_keys x)
       delete[] rNode->key;
       delete[] rNode->children;
       delete rNode;
-      // cout << "Deleted right node (1)" << endl;
       return 1 + numNodesMerged;
     }
   }
@@ -244,7 +218,6 @@ int BPTree::removeData(data_keys x)
   else
   {
     throw std::logic_error("Tree is empty!");
-    // return -1;
   }
   return 0;
 }
