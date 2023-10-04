@@ -25,6 +25,7 @@ BPlusTree::BPlusTree(){
     this->keysStored = 0;
     this->blockSize = 400;
     this->nodeSize = blockSize;
+    this->nodesStored = 0;
     int calculatedCapacity, count = 0;
     while(blockSize >= count + sizeof(Address) + sizeof(float)){
         count += sizeof(Address) + sizeof(float);
@@ -44,6 +45,7 @@ int BPlusTree::insert(float key, Address value){
         root.numKeys = 1;
         root.children[0][0] = value;
         this->rootNode = &root;
+        this->nodesStored++;
     }
     else{
         Node *cursor = rootNode;
@@ -70,15 +72,35 @@ int BPlusTree::insert(float key, Address value){
         //If there is no more space, create a new node
         if(cursor->numKeys >= maxKeys){
             Node newNode = Node(maxKeys, true);
-            Address newNodeAddress = Address(&newNode, 0); //TODO: Need to confirm that there is no problem not using a pointer here
+            //TODO: Need to confirm that there is no problem not using a pointer here
+            Address newNodeAddress = Address(&newNode, 0); 
             cursor->children[cursor->maxKeys].push_back(newNodeAddress);
+            this->nodesStored++;
             cursor = &newNode;
             cursor->keys[0] = key;
             cursor->numKeys = 1;
             cursor->children[0][0] = value;
+            if(parent==rootNode && nodesStored == 2){
+                //TODO: manually insert a parent node if the initial cursor is on root
+                Node newParentNode = Node(maxKeys, false);
+                Address newParentNodeAddress = Address(&newParentNode, 0);
+                Address oldRootNodeAddress = Address(&rootNode, 0);
+                //First value in parent is the left bound of the right node
+                newParentNode.keys[0] = newNode.keys[0];
+                //Second pointer in parent is the memory address of the new node
+                newParentNode.children[1][0] = newParentNodeAddress;
+                //Set first value of children to be the old root node
+                newParentNode.children[0][0] = oldRootNodeAddress;
+                //Update old root node to now be a leaf node
+                this->rootNode->isLeaf = true;
+                //Update root node variable to the new parent node
+                this->rootNode = &newParentNode;
+                this->nodesStored++;
+            }
+            else{ 
+            //TODO: helper function to manage parent node creation / updating in middle layers
+            }
         }
-        //TODO: manually insert a parent node if the initial cursor is on root
-        //TODO: helper function to manage parent node creation / updating in middle layers
         
     }
 }

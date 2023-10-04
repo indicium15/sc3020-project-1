@@ -38,7 +38,7 @@ class BPlusTree{
         int nodesStored;
         int nodeSize;
         int blockSize;
-        int insert(Record record);
+        int insert(float key, Address value);
         int remove(float key);
         void displayTree();
         void displayNode();
