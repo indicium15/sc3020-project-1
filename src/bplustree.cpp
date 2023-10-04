@@ -77,6 +77,8 @@ int BPlusTree::insert(float key, Address value){
             cursor->numKeys = 1;
             cursor->children[0][0] = value;
         }
-
+        //TODO: manually insert a parent node if the initial cursor is on root
+        //TODO: helper function to manage parent node creation / updating in middle layers
+        
     }
 }

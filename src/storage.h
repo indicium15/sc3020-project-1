@@ -33,7 +33,6 @@ public:
     Storage(uint diskCapacity, uint blockSize);
     // Destructor
     ~Storage();
-    // TODO: Write a function to parse file data and return record object
     // Allocate memory to a block
     bool allocateBlock();
     // Allocate memory to a record
