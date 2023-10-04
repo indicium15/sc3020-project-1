@@ -5,6 +5,7 @@
 #include <vector>
 #include <memory>
 #include <cstdlib>
+#include <cstdint>
 
 using namespace std;
 typedef unsigned int uint;
@@ -44,8 +45,13 @@ bool Storage::allocateRecord(Record record)
         cerr << "Failed to find an available block" << endl;
         return false;
     }
+    // Update record header
+    record.setBlockAddress(this->getBlockAddress(this->currentBlock));
+    record.setOffset(currentBlockSize);
+    record.print(); 
     // Copy the record data to the memory address
-    memcpy(blockAddress, &record, sizeof(record));
+    memcpy(blockAddress, &record, sizeof(Record));
+    // cout << "Current block size " << currentBlockSize << endl;
     currentBlockSize += sizeof(record);
     // Update blockRecords value to keep track
     auto find = blockRecords.find(currentBlock);
@@ -127,32 +133,8 @@ vector<Record> Storage::readAllRecords()
     vector<Record> records;
     for (int blockID = 0; blockID <= currentBlock; ++blockID)
     {
-
-        uchar *blockCursor = baseAddress + (blockID * blockSize); // starting memory address of the particular block
-        int numRecordsInBlock = recordsInBlock(blockID);
-        if (numRecordsInBlock == 0)
-        {
-            break;
-        }
-
-        for (int i = 0; i < numRecordsInBlock; ++i)
-        {
-            int offset = i * sizeof(Record);
-            // TODO Make changes here and in the main function
-            Record record(
-                *reinterpret_cast<float *>(blockCursor + offset),     // fgPct
-                *reinterpret_cast<int *>(blockCursor + offset + 4),     // ftPct
-                *reinterpret_cast<uint8_t *>(blockCursor + offset + 8), // fg3Pct
-                *reinterpret_cast<uint8_t *>(blockCursor + offset + 12), // gameDate
-                *reinterpret_cast<uint8_t *>(blockCursor + offset + 16), // recordID
-                *reinterpret_cast<uint8_t *>(blockCursor + offset + 18), // teamID
-                *reinterpret_cast<float *>(blockCursor + offset + 19),   // pts
-                *reinterpret_cast<float *>(blockCursor + offset + 20),  // ast
-                *reinterpret_cast<float *>(blockCursor + offset + 21),  // reb
-                *reinterpret_cast<bool *>(blockCursor + offset + 22)    // homeTeamWins
-            );
-            records.push_back(record);
-        }
+        vector<Record> blockRecords = readRecordsFromBlock(blockID);
+        records.insert(records.end(), blockRecords.begin(), blockRecords.end());        
     }
     return records;
 }
@@ -175,17 +157,20 @@ vector<Record> Storage::readRecordsFromBlock(int blockID)
     for (int i = 0; i < numRecordsInBlock; ++i)
     {
         int offset = i * sizeof(Record);
+        //TODO: Fix offset not being read
         Record record(
-             *reinterpret_cast<float *>(blockCursor + offset),     // fgPct
-                *reinterpret_cast<int *>(blockCursor + offset + 4),     // ftPct
-                *reinterpret_cast<uint8_t *>(blockCursor + offset + 8), // fg3Pct
-                *reinterpret_cast<uint8_t *>(blockCursor + offset + 12), // gameDate
-                *reinterpret_cast<uint8_t *>(blockCursor + offset + 16), // recordID
-                *reinterpret_cast<uint8_t *>(blockCursor + offset + 18), // teamID
-                *reinterpret_cast<float *>(blockCursor + offset + 19),   // pts
-                *reinterpret_cast<float *>(blockCursor + offset + 20),  // ast
-                *reinterpret_cast<float *>(blockCursor + offset + 21),  // reb
-                *reinterpret_cast<bool *>(blockCursor + offset + 22)    // homeTeamWins
+                *reinterpret_cast<float *>(blockCursor + offset),     // fgPct
+                *reinterpret_cast<float *>(blockCursor + offset + 4),     // ftPct
+                *reinterpret_cast<float *>(blockCursor + offset + 8), // fg3Pct
+                *reinterpret_cast<int *>(blockCursor + offset + 12), // gameDate
+                *reinterpret_cast<uchar **>(blockCursor + offset + 16), // blockAddress
+                *reinterpret_cast<int *>(blockCursor + offset + 24), // offset
+                *reinterpret_cast<unsigned short int *>(blockCursor + offset + 28), // recordID
+                *reinterpret_cast<uint8_t *>(blockCursor + offset + 30), // teamID
+                *reinterpret_cast<uint8_t *>(blockCursor + offset + 31),   // pts
+                *reinterpret_cast<uint8_t *>(blockCursor + offset + 32),   // ast
+                *reinterpret_cast<uint8_t *>(blockCursor + offset + 33),   // reb
+                *reinterpret_cast<bool *>(blockCursor + offset + 34)    // homeTeamWins
         );
         records.push_back(record);
     }
@@ -206,6 +191,10 @@ int Storage::recordsInBlock(int blockID)
         return find->second;
     }
     return 0;
+}
+
+uchar* Storage::getBlockAddress(int blockID){
+    return(baseAddress + (blockID * blockSize));
 }
 
 // Getter functions for private class attributes

@@ -49,6 +49,8 @@ public:
     vector<Record> readAllRecords();
     // Return the number of records for a blockID by looking up the structure
     int recordsInBlock(int blockID);
+    //Return the header memory address for a block ID
+    uchar* getBlockAddress(int blockID);
     // Getter functions for private attributes
     int getRecordsStored();
     int getBlocksUsed();

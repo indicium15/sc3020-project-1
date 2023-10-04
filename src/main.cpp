@@ -29,13 +29,13 @@ typedef unsigned int uint;
  */
 bool compareRecords(const Record &a, const Record &b)
 {
-    // Comapre dates of games
-    if (a.gameDate < b.gameDate)
+    // Comapre fgPct of games
+    if (a.fgPct < b.fgPct)
     {
         return true;
     }
-    // If dates are the same, compare by teamID
-    else if (a.gameDate == b.gameDate)
+    // If fgPct values are the same, compare by teamID
+    else if (a.fgPct == b.fgPct)
     {
         return a.teamID < b.teamID;
     }
@@ -59,14 +59,14 @@ int main()
     while (getline(inputFile, line))
     {
         lineNumber++;
-        uint8_t recordNumber = static_cast<uint8_t>(lineNumber - 1);
+        unsigned short int recordNumber = static_cast<unsigned short int>(lineNumber - 1);
         // Skip the first line of the file (column headers)
         if (lineNumber == 1)
         {
             continue;
         }
         // Comment out for final demonstration
-        if (lineNumber == 18)
+        if (lineNumber == 100)
         {
             break;
         }
@@ -116,7 +116,7 @@ int main()
         cout << "Home Team Wins: " << homeTeamWins << endl;
         try
         {
-            Record recordToInsert(recordNumber,gameDateStr, teamID, pts, reb, ast, fgPct, ftPct, fg3Pct, homeTeamWins);
+            Record recordToInsert(recordNumber,gameDateStr, teamID, pts, reb, ast, fgPct, ftPct, fg3Pct, homeTeamWins,0,0);
             cout << "-----------------------------" << endl;
             cout << "Record Information" << endl;
             cout << "Line Number: " << lineNumber << endl;
@@ -140,13 +140,28 @@ int main()
         }
     }
     inputFile.close();
+    cout << "------------------------------------------" << endl;
+    cout << "Record Offsets" << endl;
+    cout << "fgPct: " << offsetof(Record,fgPct) << endl;
+    cout << "ftPct: " << offsetof(Record,ftPct) << endl;
+    cout << "fg3Pct: " << offsetof(Record,fg3Pct) << endl;
+    cout << "gameDate: " << offsetof(Record,gameDate) << endl;
+    cout << "blockID: " << offsetof(Record,blockAddress) << endl;
+    cout << "offset: " << offsetof(Record,offset) << endl;
+    cout << "recordID: " << offsetof(Record,recordID) << endl;
+    cout << "teamID: " << offsetof(Record,teamID) << endl;
+    cout << "pts: " << offsetof(Record,pts) << endl;
+    cout << "ast: " << offsetof(Record,ast) << endl;
+    cout << "reb: " << offsetof(Record,reb) << endl;
+    cout << "homeTeamWins: " << offsetof(Record,homeTeamWins) << endl;
+    cout << "------------------------------------------" << endl;
     cout << "Sorted Records" << endl;
     sort(records.begin(), records.end(), compareRecords);
-    for (const Record &record : records)
+    for (const Record record : records)
     {
-        record.print();
         if (storage.allocateRecord(record))
         {
+            //record.print();
             // cout << "Record allocated sucessfully." << endl;
         }
         else
@@ -162,7 +177,8 @@ int main()
     int block1Records = storage.recordsInBlock(1);
     cout << "Block 1 Records: " << block1Records << endl;
     cout << "Reading Block 0 From Database" << endl;
-    recordsRead = storage.readRecordsFromBlock(0);
+    // recordsRead = storage.readRecordsFromBlock(0);
+    recordsRead = storage.readAllRecords();
     cout << "------------------------------------------" << endl;
     cout << "Experiment 1" << endl;
     int recordsStored = storage.getRecordsStored();
@@ -170,27 +186,11 @@ int main()
     cout << "Size of Record: " << sizeof(Record)  << " bytes" << endl;
     cout << "Number of Records Per Block : " << (storage.getBlockSize() / sizeof(Record)) << endl;
     cout << "Number of Blocks: " << storage.getBlocksUsed() << endl;
-    // cout << "Number of Records Stored Per Block: " << endl;
-    // storage.printBlockRecords();
-    // cout << "All records:" << endl;
-    // for (const Record &record : recordsRead)
-    // {
-    //     record.print();
-    // }
-
-    //B+ Tree Search
-    BPTree tree = BPTree(storage.getBlocksUsed());;
-    float fgPct = 0.5;
-
-    // Search for some data in the tree
-    Node* result = tree.search(fgPct, false, 0);
-    if (result != nullptr)
+    cout << "Number of Records Stored Per Block: " << endl;
+    storage.printBlockRecords();
+    cout << "All records:" << endl;
+    for (const Record record : recordsRead)
     {
-        std::cout << "Found key " << fgPct << " in node " << result << std::endl;
+        record.print();
     }
-    else
-    {
-        std::cout << "Key " << fgPct << " not found in tree" << std::endl;
-    }
-    return 0;
 }
