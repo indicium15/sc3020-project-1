@@ -19,7 +19,7 @@ using days = chrono::duration<int, ratio<60 * 60 * 24>>;
 
 Record::Record(float fgPercentage, float ftPercentage, float fg3Percentage, int date, uchar* blockAddress, int offset, unsigned short int recordID, uint8_t teamID, uint8_t points, uint8_t assists, uint8_t rebounds, bool homeTeamWins)
     : recordID(recordID), gameDate(date), teamID(teamID), pts(points), ast(assists), reb(rebounds),
-      fgPct(fgPercentage), ftPct(ftPercentage), fg3Pct(fg3Percentage), homeTeamWins(homeTeamWins), blockAddress(blockAddress){};
+      fgPct(fgPercentage), ftPct(ftPercentage), fg3Pct(fg3Percentage), homeTeamWins(homeTeamWins), offset(offset), blockAddress(blockAddress){};
 
 /**
  * @brief Constructor from record that converts the data read from a file format to a Record object
@@ -150,7 +150,7 @@ int Record::boolWinsToInt(bool wins)
  */
 void Record::print() const
 {
-    std::cout << "RECORD ID: " << recordID << " GAME_DATE_EST: " << gameDate << " TEAM_ID_home: " << +teamID << " PTS_home: " << +pts << " FG_PCT_home: " << fgPct << " FT_PCT_home: " << ftPct << " FG3_PCT_home: " << fg3Pct << " AST_home: " << +ast << " REB_home: " << +reb << " HOME_TEAM_WINS: " << homeTeamWins << " BLOCK ADDRESS: " << static_cast<void*>(blockAddress) << " OFFSET: " << offset << endl; 
+    std::cout << "RECORD ID: " << recordID << " GAME_DATE_EST: " << gameDate << " TEAM_ID_home: " << +teamID << " PTS_home: " << +pts << " FG_PCT_home: " << fgPct << " FT_PCT_home: " << ftPct << " FG3_PCT_home: " << fg3Pct << " AST_home: " << +ast << " REB_home: " << +reb << " HOME_TEAM_WINS: " << homeTeamWins << " BLOCK ADDRESS: " << static_cast<void*>(blockAddress) << " OFFSET: " << static_cast<int>(offset) << endl; 
 }
 
 void Record::setBlockAddress(uchar* blockAddress){

@@ -68,7 +68,7 @@ int main()
             continue;
         }
         // Comment out for final demonstration
-        if (lineNumber == 5)
+        if (lineNumber == 13)
         {
             break;
         }
@@ -159,11 +159,11 @@ int main()
     cout << "------------------------------------------" << endl;
     cout << "Sorted Records" << endl;
     sort(records.begin(), records.end(), compareRecords);
-    for (const Record record : records)
+    for (Record record : records)
     {
         if (storage.allocateRecord(record))
         {
-            cout << "Record allocated " << endl;
+            //cout << "Record allocated " << endl;
         }
         else
         {
@@ -174,9 +174,6 @@ int main()
     uchar *dataBlock0 = storage.readBlock(0);
     int block0Records = storage.recordsInBlock(0);
     cout << "Block 0 Records: " << block0Records << endl;
-    uchar *dataBlock1 = storage.readBlock(1);
-    int block1Records = storage.recordsInBlock(1);
-    cout << "Block 1 Records: " << block1Records << endl;
     cout << "Reading Block 0 From Database" << endl;
     // recordsRead = storage.readRecordsFromBlock(0);
     recordsRead = storage.readAllRecords();
@@ -202,19 +199,19 @@ int main()
         {
             recordMap[record.fgPct].push_back(Address(record.blockAddress, record.offset));
         }
-        //record.print();
+        record.print();
     }
     cout << "------------------------------------------" << endl;
-    for (const auto& pair : recordMap) {
-        std::cout << "Key: " << pair.first << ", Value: " << endl;
-        for(const Address& address: pair.second)
-        {
-            if (address.blockAddress != nullptr) {
-            std::cout << "Block Address: " << address.blockAddress << std::endl;
-            std::cout << "Offset: " << address.offset << std::endl;
-        } else {
-            std::cout << "Block Address is null." << std::endl;
-        }
-        }
-    }
+    // for (const auto& pair : recordMap) {
+    //     std::cout << "Key: " << pair.first << ", Value: " << endl;
+    //     for(const Address& address: pair.second)
+    //     {
+    //         if (address.blockAddress != nullptr) {
+    //         std::cout << "Block Address: " << address.blockAddress << std::endl;
+    //         std::cout << "Offset: " << address.offset << std::endl;
+    //     } else {
+    //         std::cout << "Block Address is null." << std::endl;
+    //     }
+    //     }
+    // }
 }
