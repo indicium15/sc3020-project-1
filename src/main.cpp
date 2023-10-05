@@ -192,12 +192,14 @@ int main()
     {
         if (recordMap.find(record.fgPct) == recordMap.end())
         {
+            //If value is not found, create a vector and add it to the hash map
             vector<Address> addresses;
             addresses.push_back(Address(record.blockAddress, record.offset));
             recordMap[record.fgPct] = addresses;
         }
         else
         {
+            //Else append the value to the existing vector for the key
             recordMap[record.fgPct].push_back(Address(record.blockAddress, record.offset));
         }
         record.print();

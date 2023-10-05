@@ -16,6 +16,11 @@
 Node::Node(int maxKeys, bool isLeaf)
 {
     this->keys = new float[maxKeys];
+    // Initialize all elements to 0.0
+    for (int i = 0; i < maxKeys; ++i)
+    {
+        this->keys[i] = 0.0;
+    }
     this->children = vector<vector<Address>>(maxKeys + 1);
     this->isLeaf = isLeaf;
     this->numKeys = 0;
@@ -130,14 +135,14 @@ void BPlusTree::displayNode(Node *node, int level)
     }
 }
 
-int BPlusTree::insert(float key, const vector<Address>& value)
+int BPlusTree::insert(float key, const vector<Address> &value)
 {
     // No root node exists, create one
     // cout << "Inserting key: " << key << endl;
     // cout << "Inserting value: " << value[0].blockAddress << endl;
     if (this->rootNode == nullptr)
     {
-        Node* root = new Node(this->maxKeys, true);
+        Node *root = new Node(this->maxKeys, true);
         root->keys[0] = key;
         root->children.push_back(value);
         root->numKeys++;
@@ -155,17 +160,17 @@ int BPlusTree::insert(float key, const vector<Address>& value)
         {
             for (int i = 0; i < cursor->numKeys; i++)
             {
-                cout << "Exploring Key"  << cursor->keys[i] << endl; 
+                cout << "Exploring Key" << cursor->keys[i] << endl;
                 if (key < cursor->keys[i])
                 {
-                    cout << "Expanding key " << cursor->keys[i] << endl; 
-                    // parent = cursor; //TODO: check if this logic is right. parent variable keeps being stored with the parent of the cursor 
+                    cout << "Expanding key " << cursor->keys[i] << endl;
+                    // parent = cursor; //TODO: check if this logic is right. parent variable keeps being stored with the parent of the cursor
                     cursor = static_cast<Node *>(cursor->children[i][0].blockAddress);
                     break;
                 }
                 if (i == cursor->numKeys - 1)
                 {
-                    // parent = cursor;//TODO: check if this logic is right. parent variable keeps being stored with the parent of the cursor 
+                    // parent = cursor;//TODO: check if this logic is right. parent variable keeps being stored with the parent of the cursor
                     cursor = static_cast<Node *>(cursor->children[i + 1][0].blockAddress);
                     break;
                 }
@@ -183,11 +188,11 @@ int BPlusTree::insert(float key, const vector<Address>& value)
             // Swap all keys after this point to make space for the new key
             for (int j = cursor->numKeys; j > i; j--)
             {
-                cout << "Swapping j " << j << " with " << j-1 << endl;
+                cout << "Swapping j " << j << " with " << j - 1 << endl;
                 cursor->keys[j] = cursor->keys[j - 1];
                 cursor->children[j] = cursor->children[j - 1];
             }
-            //Insert the keys into the correct point i
+            // Insert the keys into the correct point i
             cout << "Inserting key into position " << i << endl;
             cursor->keys[i] = key;
             cout << "Inserting children into position " << i << endl;
@@ -201,11 +206,11 @@ int BPlusTree::insert(float key, const vector<Address>& value)
         else if (cursor->numKeys >= maxKeys)
         {
             cout << "Maximum keys exceeded in current node, creating new node" << endl;
-            Node* newNode = new Node(maxKeys, true);
+            Node *newNode = new Node(maxKeys, true);
             // TODO: Need to confirm that there is no problem not using a pointer here
             Address newNodeAddress = Address(&newNode, 0);
             cursor->children[cursor->maxKeys].push_back(newNodeAddress);
-            
+
             cursor = newNode;
             cursor->keys[0] = key;
             cursor->numKeys = 1;
@@ -230,10 +235,10 @@ int BPlusTree::insert(float key, const vector<Address>& value)
                 cout << "First pointer in parent: " << &newParentNode->children[0][0] << endl;
                 // Update old root node to now be a leaf node
                 this->rootNode->isLeaf = true;
-                cout << "Address of old root node " << static_cast<void*>(this->rootNode) << endl;
+                cout << "Address of old root node " << static_cast<void *>(this->rootNode) << endl;
                 // Update root node variable to the new parent node
                 this->rootNode = newParentNode;
-                cout << "Address of new root node " << static_cast<void*>(this->rootNode) << endl;
+                cout << "Address of new root node " << static_cast<void *>(this->rootNode) << endl;
                 this->nodesStored++;
                 this->levels++;
             }
