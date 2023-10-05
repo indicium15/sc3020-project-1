@@ -69,7 +69,7 @@ int main()
             continue;
         }
         // Comment out for final demonstration
-        if (lineNumber == 40)
+        if (lineNumber == 23)
         {
             break;
         }
@@ -246,6 +246,7 @@ int main()
         cout << "Number of keys: " << tree.keysStored << endl;
         cout << "Number of levels: " << tree.levels << endl;
     }
+    tree.displayTree();
     // cout << "Number of nodes: " << tree.nodesStored << endl;
     // cout << "Number of keys: " << tree.keysStored << endl;
     // cout << "Number of levels: " << tree.levels << endl;
