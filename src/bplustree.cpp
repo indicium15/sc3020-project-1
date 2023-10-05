@@ -1,7 +1,7 @@
-#include "bplustree.h";
-#include "storage.h";
-#include <iostream>;
-#include "types.h";
+#include "bplustree.h"
+#include "storage.h"
+#include <iostream>
+#include "types.h"
 
 // Address::Address(Record record){
 //     this->blockAddress = record.blockAddress;
@@ -17,7 +17,7 @@ Node::Node(int maxKeys, bool isLeaf)
 {
     this->keys = new float[maxKeys];
     // Initialize all elements to 0.0
-    for (int i = 0; i < maxKeys; ++i)
+    for (int i = 0; i < maxKeys; i++)
     {
         this->keys[i] = 0.0;
     }
@@ -153,23 +153,30 @@ int BPlusTree::insert(float key, const vector<Address> &value)
     }
     else
     {
+        cout << "Root node exists" << endl;
         Node *cursor = rootNode;
         Node *parent = cursor; //= rootNode; // TODO: Just added it now not sure if this works!
         // TODO: if root node is not a leaf
         while ((cursor->isLeaf) == false)
         {
-            for (int i = 0; i < cursor->numKeys; i++)
+            // cout << "Cursor not at leaf node" << endl;
+            parent = cursor;
+            cout << "Num Keys: " << cursor->getNumKeys() << endl;
+            cout << "First key of cursor: " << cursor->getKey(0) << endl;
+            // cout << "Keys in the cursor: " << cursor->numKeys << endl;
+            for (int i = 0; i < cursor->getNumKeys(); i++)
             {
                 cout << "Exploring Key" << cursor->keys[i] << endl;
-                if (key < cursor->keys[i])
+                if (key < cursor->getKey(i))
                 {
                     cout << "Expanding key " << cursor->keys[i] << endl;
                     // parent = cursor; //TODO: check if this logic is right. parent variable keeps being stored with the parent of the cursor
                     cursor = static_cast<Node *>(cursor->children[i][0].blockAddress);
                     break;
                 }
-                if (i == cursor->numKeys - 1)
+                if (i == cursor->getNumKeys() - 1)
                 {
+                    cout << "Expanding last key " << cursor->keys[i] << endl;
                     // parent = cursor;//TODO: check if this logic is right. parent variable keeps being stored with the parent of the cursor
                     cursor = static_cast<Node *>(cursor->children[i + 1][0].blockAddress);
                     break;
@@ -177,7 +184,7 @@ int BPlusTree::insert(float key, const vector<Address> &value)
             }
         }
         // Reaching a leaf node and it has space to add more nodes
-        if (cursor->numKeys < maxKeys)
+        if (cursor->getNumKeys() < maxKeys)
         {
             cout << "Reached a leaf node" << endl;
             int i = 0;
@@ -186,7 +193,7 @@ int BPlusTree::insert(float key, const vector<Address> &value)
                 i++;
             cout << "Position for Insertion: " << i << endl;
             // Swap all keys after this point to make space for the new key
-            for (int j = cursor->numKeys; j > i; j--)
+            for (int j = cursor->getNumKeys(); j > i; j--)
             {
                 cout << "Swapping j " << j << " with " << j - 1 << endl;
                 cursor->keys[j] = cursor->keys[j - 1];
@@ -197,7 +204,7 @@ int BPlusTree::insert(float key, const vector<Address> &value)
             cursor->keys[i] = key;
             cout << "Inserting children into position " << i << endl;
             cursor->children[i].insert(cursor->children[i].end(), value.begin(), value.end());
-            cout << "Incrementing numKeys" << endl;
+            cout << "Incrementing numKeys. New Num keys = " << cursor->getNumKeys() << endl;
             cursor->numKeys++;
             cout << "Incrementing keysStored" << endl;
             this->keysStored++;
@@ -210,7 +217,6 @@ int BPlusTree::insert(float key, const vector<Address> &value)
             // TODO: Need to confirm that there is no problem not using a pointer here
             Address newNodeAddress = Address(&newNode, 0);
             cursor->children[cursor->maxKeys].push_back(newNodeAddress);
-
             cursor = newNode;
             cursor->keys[0] = key;
             cursor->numKeys = 1;
@@ -233,12 +239,13 @@ int BPlusTree::insert(float key, const vector<Address> &value)
                 // Set first value of children to be the old root node
                 newParentNode->children[0].push_back(Address(oldRootNodeAddress.blockAddress, oldRootNodeAddress.offset));
                 cout << "First pointer in parent: " << &newParentNode->children[0][0] << endl;
+                newParentNode->numKeys = 1;
                 // Update old root node to now be a leaf node
                 this->rootNode->isLeaf = true;
-                cout << "Address of old root node " << static_cast<void *>(this->rootNode) << endl;
+                cout << "Address of old root node " << static_cast<Node *>(this->rootNode) << endl;
                 // Update root node variable to the new parent node
                 this->rootNode = newParentNode;
-                cout << "Address of new root node " << static_cast<void *>(this->rootNode) << endl;
+                cout << "Address of new root node " << static_cast<Node *>(this->rootNode) << endl;
                 this->nodesStored++;
                 this->levels++;
             }
