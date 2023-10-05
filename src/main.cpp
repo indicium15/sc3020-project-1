@@ -13,6 +13,7 @@
 #include "storage.h"
 #include "record.h"
 #include "types.h"
+#include "bplustree.h"
 // #include "b+tree_search.cpp"
 
 using namespace std;
@@ -47,6 +48,7 @@ int main()
 {
     vector<Record> records;
     unordered_map<float, vector<Address>> recordMap;
+    
     uint databaseSize = 100 * 1024 * 1024;
     Storage storage(databaseSize, 400);
     // Read the input file
@@ -68,7 +70,7 @@ int main()
             continue;
         }
         // Comment out for final demonstration
-        if (lineNumber == 13)
+        if (lineNumber == 40)
         {
             break;
         }
@@ -100,7 +102,7 @@ int main()
             ast = 0;
             reb = 0;
             fgPct = 0.0f;
-            ftPct = 0.0f; 
+            ftPct = 0.0f;
             fg3Pct = 0.0f;
         }
         int homeTeamWins = stoi(fields[8]);
@@ -118,7 +120,7 @@ int main()
         std::cout << "Home Team Wins: " << homeTeamWins << endl;
         try
         {
-            Record recordToInsert = Record(recordNumber,gameDateStr, teamID, pts, reb, ast, fgPct, ftPct, fg3Pct, homeTeamWins,0,0);
+            Record recordToInsert = Record(recordNumber, gameDateStr, teamID, pts, reb, ast, fgPct, ftPct, fg3Pct, homeTeamWins, 0, 0);
             std::cout << "-----------------------------" << endl;
             std::cout << "Record Information" << endl;
             std::cout << "Line Number: " << lineNumber << endl;
@@ -144,18 +146,18 @@ int main()
     inputFile.close();
     cout << "------------------------------------------" << endl;
     cout << "Record Offsets" << endl;
-    cout << "fgPct: " << offsetof(Record,fgPct) << endl;
-    cout << "ftPct: " << offsetof(Record,ftPct) << endl;
-    cout << "fg3Pct: " << offsetof(Record,fg3Pct) << endl;
-    cout << "gameDate: " << offsetof(Record,gameDate) << endl;
-    cout << "blockID: " << offsetof(Record,blockAddress) << endl;
-    cout << "offset: " << offsetof(Record,offset) << endl;
-    cout << "recordID: " << offsetof(Record,recordID) << endl;
-    cout << "teamID: " << offsetof(Record,teamID) << endl;
-    cout << "pts: " << offsetof(Record,pts) << endl;
-    cout << "ast: " << offsetof(Record,ast) << endl;
-    cout << "reb: " << offsetof(Record,reb) << endl;
-    cout << "homeTeamWins: " << offsetof(Record,homeTeamWins) << endl;
+    cout << "fgPct: " << offsetof(Record, fgPct) << endl;
+    cout << "ftPct: " << offsetof(Record, ftPct) << endl;
+    cout << "fg3Pct: " << offsetof(Record, fg3Pct) << endl;
+    cout << "gameDate: " << offsetof(Record, gameDate) << endl;
+    cout << "blockID: " << offsetof(Record, blockAddress) << endl;
+    cout << "offset: " << offsetof(Record, offset) << endl;
+    cout << "recordID: " << offsetof(Record, recordID) << endl;
+    cout << "teamID: " << offsetof(Record, teamID) << endl;
+    cout << "pts: " << offsetof(Record, pts) << endl;
+    cout << "ast: " << offsetof(Record, ast) << endl;
+    cout << "reb: " << offsetof(Record, reb) << endl;
+    cout << "homeTeamWins: " << offsetof(Record, homeTeamWins) << endl;
     cout << "------------------------------------------" << endl;
     cout << "Sorted Records" << endl;
     sort(records.begin(), records.end(), compareRecords);
@@ -163,7 +165,7 @@ int main()
     {
         if (storage.allocateRecord(record))
         {
-            //cout << "Record allocated " << endl;
+            // cout << "Record allocated " << endl;
         }
         else
         {
@@ -181,7 +183,7 @@ int main()
     cout << "Experiment 1" << endl;
     int recordsStored = storage.getRecordsStored();
     cout << "Number of Records: " << recordsStored << endl;
-    cout << "Size of Record: " << sizeof(Record)  << " bytes" << endl;
+    cout << "Size of Record: " << sizeof(Record) << " bytes" << endl;
     cout << "Number of Records Per Block : " << (storage.getBlockSize() / sizeof(Record)) << endl;
     cout << "Number of Blocks: " << storage.getBlocksUsed() << endl;
     cout << "Number of Records Stored Per Block: " << endl;
@@ -189,7 +191,7 @@ int main()
     cout << "All records:" << endl;
     for (const Record record : recordsRead)
     {
-        if(recordMap.find(record.fgPct) == recordMap.end())
+        if (recordMap.find(record.fgPct) == recordMap.end())
         {
             vector<Address> addresses;
             addresses.push_back(Address(record.blockAddress, record.offset));
@@ -201,17 +203,49 @@ int main()
         }
         record.print();
     }
+    cout << "-----------------PRINTING RECORD MAP-------------------------" << endl;
+    // Printing record map structure
+    for (const auto &pair : recordMap)
+    {
+        std::cout << "Key: " << pair.first << ", Value: " << endl;
+        for (const Address &address : pair.second)
+        {
+            if (address.blockAddress != nullptr)
+            {
+                std::cout << "Block Address: " << address.blockAddress << std::endl;
+                std::cout << "Offset: " << address.offset << std::endl;
+            }
+            else
+            {
+                std::cout << "Block Address is null." << std::endl;
+            }
+        }
+    }
     cout << "------------------------------------------" << endl;
-    // for (const auto& pair : recordMap) {
-    //     std::cout << "Key: " << pair.first << ", Value: " << endl;
-    //     for(const Address& address: pair.second)
-    //     {
-    //         if (address.blockAddress != nullptr) {
-    //         std::cout << "Block Address: " << address.blockAddress << std::endl;
-    //         std::cout << "Offset: " << address.offset << std::endl;
-    //     } else {
-    //         std::cout << "Block Address is null." << std::endl;
-    //     }
-    //     }
-    // }
+    cout << "Experiment 2 " << endl;
+    // Initialize B+ Tree Object
+    BPlusTree tree = BPlusTree();
+    cout << "Maximum Keys in a node: " << tree.maxKeys << endl;
+    cout << "Map size: " << recordMap.size() << endl;
+    int count = 0;
+    for (const auto &pair : recordMap)
+    {
+        // //TODO: remove this when running on whole database
+        count++;
+        cout << "Count: " << count << endl;
+        std::cout << "Key: " << pair.first << ", Value: " << &pair.second << endl;
+        tree.insert(pair.first, pair.second);
+        cout << "Content of the root node: " << endl;
+        for (int i = 0; i < tree.rootNode->getNumKeys(); i++)
+        {
+            cout << tree.rootNode->getKey(i) << " | ";
+        }
+        cout << endl;
+        cout << "Number of nodes: " << tree.nodesStored << endl;
+        cout << "Number of keys: " << tree.keysStored << endl;
+        cout << "Number of levels: " << tree.levels << endl;
+    }
+    // cout << "Number of nodes: " << tree.nodesStored << endl;
+    // cout << "Number of keys: " << tree.keysStored << endl;
+    // cout << "Number of levels: " << tree.levels << endl;
 }
