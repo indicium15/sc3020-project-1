@@ -3,7 +3,7 @@
 #include <sstream>
 #include <vector>
 #include <tuple>
-#include <unordered_map>
+#include <map>
 #include <string>
 #include <cstdint>
 #include <typeinfo>
@@ -47,8 +47,7 @@ bool compareRecords(const Record &a, const Record &b)
 int main()
 {
     vector<Record> records;
-    unordered_map<float, vector<Address>> recordMap;
-    
+    map<float, vector<Address>> recordMap;
     uint databaseSize = 100 * 1024 * 1024;
     Storage storage(databaseSize, 400);
     // Read the input file

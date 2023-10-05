@@ -177,7 +177,7 @@ int BPlusTree::insert(float key, const vector<Address>& value)
             cout << "Reached a leaf node" << endl;
             int i = 0;
             //Find the first last stored key smaller than the current key to insert
-            while (key > cursor->keys[i] && cursor->numKeys)
+            while (key > cursor->keys[i] && i < cursor->getNumKeys())
                 i++;
             cout << "Position for Insertion: " << i << endl;
             // Swap all keys after this point to make space for the new key
