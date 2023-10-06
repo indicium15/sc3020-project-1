@@ -210,12 +210,12 @@ int BPlusTree::remove(float key)
 
     return result;
 }
-int BPlusTree::findNodeForKey(float key, Node* currentNode)
+Node* BPlusTree::findNodeForKey(float key, Node* currentNode)
 {
     if (currentNode == nullptr)
     {
         // Tree is empty, so key is not found
-        return -1;
+        return nullptr;
     }
 
     int index = 0;
@@ -224,20 +224,20 @@ int BPlusTree::findNodeForKey(float key, Node* currentNode)
         index++;
     }
 
-    // If the key matches, return a success indicator
-    if (index < currentNode->getNumKeys() && key == currentNode->getKey(index))
-    {
-        return 0; // Key found
-    }
-
     // If it's an internal node, recursively search in the appropriate child
     if (!currentNode->getIsLeaf())
     {
         return findNodeForKey(key, static_cast<Node*>(currentNode->getChildren(index)[0].blockAddress));
     }
 
+    // If the key matches, return the current node
+    if (index < currentNode->getNumKeys() && key == currentNode->getKey(index))
+    {
+        return currentNode;
+    }
+
     // Key not found
-    return -1;
+    return nullptr;
 }
 
 int BPlusTree::removeInternal(float key, Node* parent, Node* child)
