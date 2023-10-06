@@ -75,13 +75,17 @@ BPlusTree::BPlusTree()
 
 BPlusTree::~BPlusTree()
 {
-    // delete rootNode;
+    if (rootNode != nullptr)
+    {
+        deleteNode(rootNode);
+    }
 }
 
 Node::~Node()
 {
     // delete keys;
-    // delete &children;
+    delete[] keys;
+    // delete &children; // we dont need to do this right?
 }
 
 // Function to display the B+ tree
@@ -95,6 +99,27 @@ void BPlusTree::displayTree()
     {
         cout << "Tree is empty" << endl;
     }
+}
+
+void BPlusTree::deleteNode(Node *node)
+{
+    if (node == nullptr)
+    {
+        return;
+    }
+
+    // Recursively delete child nodes
+    if (!node->getIsLeaf())
+    {
+        for (int i = 0; i <= node->getNumKeys(); i++)
+        {
+            Node *childNode = static_cast<Node *>(node->getChildren(i)[0].blockAddress);
+            deleteNode(childNode);
+        }
+    }
+
+    // Delete the current node
+    delete node;
 }
 
 // Recursive function to display a node and its children
@@ -147,6 +172,395 @@ void BPlusTree::displayNode(Node *node, int level)
 
         }
     }
+}
+ 
+int BPlusTree::remove(float key)
+{
+    if (rootNode == nullptr)
+    {
+        // Tree is empty, thus there is nothing to remove
+        return -1; 
+    }
+
+    // Remove the key starting from the root node
+    int result = removeInternal(key, rootNode, nullptr);
+
+    // If the root has only one child (it became empty), replace it with the child
+    if (rootNode->getNumKeys() == 0 && !rootNode->getIsLeaf())
+    {
+        Node* newRoot = static_cast<Node*>(rootNode->getChildren(0)[0].blockAddress);
+        delete rootNode;
+        rootNode = newRoot;
+    }
+
+    // Update the number of stored keys
+    if (result == 0)
+    {
+        keysStored--;
+    }
+
+    return result;
+
+}
+
+int BPlusTree::removeInternal(float key, Node* parent, Node* child);
+{
+    if (parent == nullptr)
+    {
+        // Key is not found in the tree
+        return -1; 
+    }
+    int index = -1;
+    // Checking whether key index is in parent node
+    for (int i = 0; i < parent->getNumKeys(); i++)
+    {
+        if (key == parent->getKey(i))
+        {
+            index = i;
+            break;
+        }
+    }
+    if (index == -1)
+    {
+        // Key is not present in the current node
+        return -1; 
+    }
+
+    if (parent->getIsLeaf())
+    {
+        // Removing the key from the leaf node
+        for (int i = index; i < parent->getNumKeys() - 1; i++)
+        {
+            parent->setKey(i, parent->getKey(i + 1));
+        }
+        parent->setNumKeys(parent->getNumKeys() - 1);
+
+        if (parent->getNumKeys() < maxKeys / 2)
+        {
+            redistributeLeafNodes(parent);
+            mergeLeafNodes(parent);
+        }
+
+        return 0; // Key has been successfully removed
+    }
+    else
+    {
+        // Removing the key from an internal node
+        for (int i = index; i < parent->getNumKeys() - 1; i++)
+        {
+            parent->setKey(i, parent->getKey(i + 1));
+            // Update the child pointers accordingly
+            parent->setChildren(i + 1, parent->getChildren(i + 2));
+        }
+        parent->setNumKeys(parent->getNumKeys() - 1);
+       
+        if (parent->getNumKeys() < maxKeys / 2)
+        {
+            redistributeInternalNodes(parent);
+            mergeInternalNodes(parent);
+        }
+
+        Node* childNode = static_cast<Node*>(parent->getChildren(index + 1)[0].blockAddress);
+        int result = removeInternal(key, childNode, parent);
+
+        if (childNode->getNumKeys() < maxKeys / 2)
+        {
+            redistributeLeafNodes(childNode);
+            mergeLeafNodes(childNode);
+        }
+
+        return result;
+    }
+}
+void BPlusTree::redistributeLeafNodes(Node* node)
+{
+    if (node == nullptr)
+        return;
+
+    // Find the index of the node within its parent
+    int indexOfNode = -1;
+    Node* parentNode = nullptr;
+    for (int i = 0; i < rootNode->getNumKeys() + 1; i++)
+    {
+        if (rootNode->getChildren(i)[0].blockAddress == node)
+        {
+            indexOfNode = i;
+            break;
+        }
+    }
+
+    if (indexOfNode == -1)
+    {
+        // Unable to find the node's index in its parent
+        return;
+    }
+    // Attempt redistribution with left sibling
+    if (indexOfNode > 0)
+    {
+        Node* leftSibling = static_cast<Node*>(rootNode->getChildren(indexOfNode - 1)[0].blockAddress);
+        if (leftSibling->getNumKeys() > maxKeys / 2)
+        {
+            // Move a key from the left sibling to the current node
+            float keyToMove = leftSibling->getKey(leftSibling->getNumKeys() - 1);
+            leftSibling->setNumKeys(leftSibling->getNumKeys() - 1);
+            node->setKey(0, keyToMove);
+
+            // Update parent keys
+            rootNode->setKey(indexOfNode - 1, keyToMove);
+
+            return;
+        }
+    }
+
+    // Attempt redistribution with right sibling
+    if (indexOfNode < rootNode->getNumKeys())
+    {
+        Node* rightSibling = static_cast<Node*>(rootNode->getChildren(indexOfNode + 1)[0].blockAddress);
+        if (rightSibling->getNumKeys() > maxKeys / 2)
+        {
+            // Move a key from the right sibling to the current node
+            float keyToMove = rightSibling->getKey(0);
+            rightSibling->setNumKeys(rightSibling->getNumKeys() - 1);
+            node->setKey(node->getNumKeys(), keyToMove);
+
+            // Update parent keys
+            rootNode->setKey(indexOfNode, rightSibling->getKey(0));
+
+            return;
+        }
+    }
+
+}
+void BPlusTree::mergeLeafNodes(Node* node)
+{
+    if (node == nullptr)
+        return;
+
+    // Find the index of the node within its parent
+    int indexOfNode = -1;
+    Node* parentNode = nullptr;
+    for (int i = 0; i < rootNode->getNumKeys() + 1; i++)
+    {
+        if (rootNode->getChildren(i)[0].blockAddress == node)
+        {
+            indexOfNode = i;
+            break;
+        }
+    }
+
+    if (indexOfNode == -1)
+    {
+        // Unable to find the node's index in its parent
+        return;
+    }
+
+    // Merge with left sibling if possible
+    if (indexOfNode > 0)
+    {
+        Node* leftSibling = static_cast<Node*>(rootNode->getChildren(indexOfNode - 1)[0].blockAddress);
+        if (leftSibling->getNumKeys() + node->getNumKeys() <= maxKeys)
+        {
+            // Merge the current node into the left sibling
+            leftSibling->setKey(leftSibling->getNumKeys(), node->getKey(0));
+            leftSibling->setNumKeys(leftSibling->getNumKeys() + 1);
+
+            for (int i = 0; i < node->getNumKeys(); i++)
+            {
+                leftSibling->setKey(leftSibling->getNumKeys(), node->getKey(i));
+                leftSibling->setNumKeys(leftSibling->getNumKeys() + 1);
+            }
+
+            // Update parent keys and pointers
+            for (int i = indexOfNode - 1; i < rootNode->getNumKeys() - 1; i++)
+            {
+                rootNode->setKey(i, rootNode->getKey(i + 1));
+                rootNode->setChildren(i + 1, rootNode->getChildren(i + 2));
+            }
+            rootNode->setNumKeys(rootNode->getNumKeys() - 1);
+            delete node;
+            mergeLeafNodes(rootNode);
+
+            return;
+        }
+    }
+
+    // Merge with right sibling if possible
+    if (indexOfNode < rootNode->getNumKeys())
+    {
+        Node* rightSibling = static_cast<Node*>(rootNode->getChildren(indexOfNode + 1)[0].blockAddress);
+        if (rightSibling->getNumKeys() + node->getNumKeys() <= maxKeys)
+        {
+            // Merge the right sibling into the current node
+            node->setKey(node->getNumKeys(), rightSibling->getKey(0));
+            node->setNumKeys(node->getNumKeys() + 1);
+
+            for (int i = 0; i < rightSibling->getNumKeys(); i++)
+            {
+                node->setKey(node->getNumKeys(), rightSibling->getKey(i));
+                node->setNumKeys(node->getNumKeys() + 1);
+            }
+
+            // Update parent keys and pointers
+            for (int i = indexOfNode; i < rootNode->getNumKeys() - 1; i++)
+            {
+                rootNode->setKey(i, rootNode->getKey(i + 1));
+                rootNode->setChildren(i + 1, rootNode->getChildren(i + 2));
+            }
+            rootNode->setNumKeys(rootNode->getNumKeys() - 1);
+
+            // Release the memory of the right sibling node
+            delete rightSibling;
+
+            // Recursively check if the parent node needs merging
+            mergeLeafNodes(rootNode);
+
+            return;
+        }
+    }
+    // Merging was not possible
+}
+void BPlusTree::redistributeInternalNodes(Node* node)
+{
+    if (node == nullptr)
+        return;
+
+    // Find the index of the node within its parent
+    int indexOfNode = -1;
+    Node* parentNode = nullptr;
+    for (int i = 0; i < rootNode->getNumKeys() + 1; i++)
+    {
+        if (rootNode->getChildren(i)[0].blockAddress == node)
+        {
+            indexOfNode = i;
+            break;
+        }
+    }
+
+    if (indexOfNode == -1)
+    {
+        return;
+    }
+    if (indexOfNode > 0)
+    {
+        Node* leftSibling = static_cast<Node*>(rootNode->getChildren(indexOfNode - 1)[0].blockAddress);
+        if (leftSibling->getNumKeys() > maxKeys / 2)
+        {
+            // Move a key from the left sibling to the current node
+            float keyToMove = leftSibling->getKey(leftSibling->getNumKeys() - 1);
+            leftSibling->setNumKeys(leftSibling->getNumKeys() - 1);
+            node->setKey(0, rootNode->getKey(indexOfNode - 1));
+            rootNode->setKey(indexOfNode - 1, keyToMove);
+
+            return;
+        }
+    }
+
+    if (indexOfNode < rootNode->getNumKeys())
+    {
+        Node* rightSibling = static_cast<Node*>(rootNode->getChildren(indexOfNode + 1)[0].blockAddress);
+        if (rightSibling->getNumKeys() > maxKeys / 2)
+        {
+            // Move a key from the right sibling to the current node
+            float keyToMove = rightSibling->getKey(0);
+            rightSibling->setNumKeys(rightSibling->getNumKeys() - 1);
+            node->setKey(node->getNumKeys(), rootNode->getKey(indexOfNode));
+            rootNode->setKey(indexOfNode, keyToMove);
+
+            return;
+        }
+    }
+
+    // Redistribution was not possible, consider merging
+}
+void BPlusTree::mergeInternalNodes(Node* node)
+{
+    if (node == nullptr)
+        return;
+
+    // Find the index of the node within its parent
+    int indexOfNode = -1;
+    Node* parentNode = nullptr;
+    for (int i = 0; i < rootNode->getNumKeys() + 1; i++)
+    {
+        if (rootNode->getChildren(i)[0].blockAddress == node)
+        {
+            indexOfNode = i;
+            break;
+        }
+    }
+
+    if (indexOfNode == -1)
+    {
+        // Unable to find the node's index in its parent
+        return;
+    }
+
+    // Merge with left sibling if possible
+    if (indexOfNode > 0)
+    {
+        Node* leftSibling = static_cast<Node*>(rootNode->getChildren(indexOfNode - 1)[0].blockAddress);
+        if (leftSibling->getNumKeys() + node->getNumKeys() <= maxKeys)
+        {
+            // Merge the current node into the left sibling
+            leftSibling->setKey(leftSibling->getNumKeys(), rootNode->getKey(indexOfNode - 1));
+            leftSibling->setNumKeys(leftSibling->getNumKeys() + 1);
+
+            for (int i = 0; i < node->getNumKeys(); i++)
+            {
+                leftSibling->setKey(leftSibling->getNumKeys(), node->getKey(i));
+                leftSibling->setNumKeys(leftSibling->getNumKeys() + 1);
+                leftSibling->setChildren(leftSibling->getNumKeys(), node->getChildren(i + 1));
+            }
+
+            // Update parent keys and pointers
+            for (int i = indexOfNode - 1; i < rootNode->getNumKeys() - 1; i++)
+            {
+                rootNode->setKey(i, rootNode->getKey(i + 1));
+                rootNode->setChildren(i + 1, rootNode->getChildren(i + 2));
+            }
+            rootNode->setNumKeys(rootNode->getNumKeys() - 1);
+
+            // Release the memory of the current node
+            delete node;
+
+            // Recursively check if the parent node needs merging
+            mergeInternalNodes(rootNode);
+
+            return;
+        }
+    }
+
+    // Merge with right sibling if possible
+    if (indexOfNode < rootNode->getNumKeys())
+    {
+        Node* rightSibling = static_cast<Node*>(rootNode->getChildren(indexOfNode + 1)[0].blockAddress);
+        if (rightSibling->getNumKeys() + node->getNumKeys() <= maxKeys)
+        {
+            // Merge the right sibling into the current node
+            node->setKey(node->getNumKeys(), rootNode->getKey(indexOfNode));
+            node->setNumKeys(node->getNumKeys() + 1);
+
+            for (int i = 0; i < rightSibling->getNumKeys(); i++)
+            {
+                node->setKey(node->getNumKeys(), rightSibling->getKey(i));
+                node->setNumKeys(node->getNumKeys() + 1);
+                node->setChildren(node->getNumKeys(), rightSibling->getChildren(i + 1));
+            }
+
+            // Update the parent keys and pointers
+            for (int i = indexOfNode; i < rootNode->getNumKeys() - 1; i++)
+            {
+                rootNode->setKey(i, rootNode->getKey(i + 1));
+                rootNode->setChildren(i + 1, rootNode->getChildren(i + 2));
+            }
+            rootNode->setNumKeys(rootNode->getNumKeys() - 1);
+            delete rightSibling;
+            mergeInternalNodes(rootNode);
+
+            return;
+        }
+    }
+
 }
 
 int BPlusTree::insert(float key, const vector<Address> &value)

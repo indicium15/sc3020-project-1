@@ -70,6 +70,11 @@ class BPlusTree{
         int insert(float key, const vector<Address>& value);
         int insertInternal(float key, Node* parent, Node* child);
         int remove(float key);
+        int removeInternal(float key, Node* parent, Node* child);
+        void redistributeLeafNodes(Node* node);
+        void redistributeInternalNodes(Node* node);
+        void mergeLeafNodes(Node* node);
+        void mergeInternalNodes(Node* node);
         void displayTree();
         void displayNode(Node* node, int level);
         
