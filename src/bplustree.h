@@ -60,6 +60,9 @@ class Node{
         void setChildren(int index, vector<Address> children){
             this->children[index] = children;
         };
+        void setChild(int index, Address child){
+            this->children[index][0] = child;
+        };
         void setIsLeaf(bool isLeaf){
             this->isLeaf = isLeaf;
         };
@@ -79,7 +82,7 @@ class BPlusTree{
         int remove(float key);
         void displayTree(Node *cursor, int level);
         void displayNode(Node* node);
-        
+        Node* findParent(Node* rootNode, Node* childNode, float lowerBoundKey);
         BPlusTree();
         ~BPlusTree();
 };

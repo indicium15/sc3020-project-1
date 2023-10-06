@@ -78,69 +78,59 @@ Node::~Node()
 }
 
 // Function to display the B+ tree
-// void BPlusTree::displayTree()
-// {
-//     if (this->rootNode != nullptr)
-//     {
-//         displayNode(rootNode, 0);
-//     }
-//     else
-//     {
-//         cout << "Tree is empty" << endl;
-//     }
-// }
+void BPlusTree::displayTree(Node *cursor, int level)
+{
+    // If tree exists, display all nodes
+    if (cursor != nullptr)
+    {
+        for (int i = 0; i < level; i++)
+        {
+            cout << "   ";
+        }
+        cout << " level " << level << ": ";
+        displayNode(cursor);
+    }
+    if (cursor->getIsLeaf() != true)
+    {
+        for (int i = 0; i < cursor->numKeys + 1; i++)
+        {
+            // Load node in from disk to main memory.
+            Node *newChild = static_cast<Node *>(cursor->getChild(i, 0).blockAddress);
 
-// // Recursive function to display a node and its children
-// void BPlusTree::displayNode(Node *node, int level)
-// {
-//     cout << "Display Tree Node: " << node << endl;
-//     cout << "Display Tree Node Keys: " << node->getNumKeys() << endl;
-//     cout << "Display Tree Node Key 1: " << node->getKey(0) << endl;
-//     // cout << "Display Tree Node Address 1: " << node->getChildren(0)[0].blockAddress << endl;
-//     if (node == nullptr)
-//     {
-//         return;
-//     }
-//     // cout << "Iterating through levels" << endl;
-//     for (int i = 0; i < level; i++)
-//     {
-//         cout << "   ";
-//     }
-//     // cout << "Level " << level << ": ";
-//     // cout << "Iterating through keys" << endl;
-//     for (int j = 0; j < node->getNumKeys(); j++)
-//     {
-//         cout << "J Value: " << j << endl;
-//         // cout << node->getChildren(j)[0].blockAddress << " | " << node->getKey(j) << " | ";
-//         cout << "Key Value: " << node->getKey(j) << endl;
-//         cout << "Block Address Value: " << node->getChildren(j)[0].blockAddress << endl;
+            displayTree(newChild, level + 1);
+        }
+    }
+}
 
-//     }
-//     if (node->getChildren(node->getNumKeys())[0].blockAddress == nullptr)
-//     {
-//         cout << " Null |";
-//     }
-//     else
-//     {
-//         cout << node->getChildren(node->getNumKeys())[0].blockAddress << "|";
-//     }
-//     for (int j = node->getNumKeys(); j < maxKeys; j++)
-//     {
-//         cout << " x |";      // Remaining empty keys
-//         cout << "  Null  |"; // Remaining pointers
-//     }
-//     cout << endl;
-//     if (!node->getIsLeaf())
-//     {
-//         for (int i = 0; i < node->getNumKeys() + 1; i++)
-//         {
-//             cout << "Display Tree going to : " << (node->getChildren(i)[0].blockAddress) << endl;  
-//             displayNode(static_cast<Node *>(node->getChildren(i)[0].blockAddress), level + 1); 
-//             // TODO: UNSURE ABOUT THE STATIC CASTING PART
+// Recursive function to display a node and its children
+void BPlusTree::displayNode(Node *node)
+{
+    int i = 0;
+    cout << "|";
+    for (int i = 0; i < node->getNumKeys(); i++)
+    {
+        cout << node->getChild(i, 0).blockAddress << " | ";
+        cout << node->getKey(i) << " | ";
+    }
 
-//         }
-//     }
-// }
+    // Print last filled pointer
+    if (node->getChild(node->getNumKeys(), 0).blockAddress == nullptr)
+    {
+        cout << " Null |";
+    }
+    else
+    {
+        cout << node->getChild(node->getNumKeys(), 0).blockAddress << "|";
+    }
+
+    for (int i = node->getNumKeys(); i < maxKeys; i++)
+    {
+        cout << " x |";      // Remaining empty keys
+        cout << "  Null  |"; // Remaining empty pointers
+    }
+
+    cout << endl;
+}
 
 int BPlusTree::insert(float key, const vector<Address> value)
 {
@@ -151,9 +141,9 @@ int BPlusTree::insert(float key, const vector<Address> value)
     {
         Node *root = new Node(this->maxKeys, true);
         root->setKey(0, key);
-        cout << "KEY STORED: " << root->getKey(root->numKeys)<<endl;
+        cout << "KEY STORED: " << root->getKey(root->numKeys) << endl;
         root->setChildren(0, value);
-        cout << "ADDRESS STORED: " << root->getChildren(root->numKeys)[0].blockAddress <<endl;
+        cout << "ADDRESS STORED: " << root->getChildren(root->numKeys)[0].blockAddress << endl;
         root->setNumKeys(root->getNumKeys() + 1);
         this->rootNode = root;
         this->nodesStored++;
@@ -166,62 +156,63 @@ int BPlusTree::insert(float key, const vector<Address> value)
         cout << "Root node exists" << endl;
         Node *cursor = rootNode;
         Node *parent = nullptr;
-        Node *oldRootNode = rootNode; 
+        Node *oldRootNode = rootNode;
         while (cursor->getIsLeaf() == false)
         {
             parent = cursor;
             cout << "Cursor Address: " << cursor << endl;
             cout << "CURSOR GET LEAF: " << cursor->getIsLeaf() << endl;
             bool found = false;
-            //cout << "Num Keys: " << cursor->getNumKeys() << endl;
-            //cout << "First key of cursor: " << cursor->getKey(0) << endl;
-            // cout << "Keys in the cursor: " << cursor->numKeys << endl;
+            // cout << "Num Keys: " << cursor->getNumKeys() << endl;
+            // cout << "First key of cursor: " << cursor->getKey(0) << endl;
+            //  cout << "Keys in the cursor: " << cursor->numKeys << endl;
             for (int i = 0; i < cursor->getNumKeys(); i++)
             {
                 cout << "Exploring Key " << cursor->getKey(i) << endl;
                 if (key < cursor->getKey(i))
                 {
                     cout << "Expanding key " << cursor->getKey(i) << endl;
-                    cursor = static_cast<Node *>(cursor->getChild(0,0).blockAddress);
+                    cursor = static_cast<Node *>(cursor->getChild(0, 0).blockAddress);
                     found = true;
                     break;
                 }
             }
-            if(!found){
-                //cout << "CURSOR -> GETNUMKEYS() " << cursor->getNumKeys() << endl;
-                //cout << "Expanding last key " << cursor->getKey(cursor->getNumKeys()) << endl;
-                //cout << "Memory address being accessed: " << cursor->getChild(cursor->getNumKeys(),0).blockAddress << endl;
+            if (!found)
+            {
+                // cout << "CURSOR -> GETNUMKEYS() " << cursor->getNumKeys() << endl;
+                // cout << "Expanding last key " << cursor->getKey(cursor->getNumKeys()) << endl;
+                // cout << "Memory address being accessed: " << cursor->getChild(cursor->getNumKeys(),0).blockAddress << endl;
                 cursor = static_cast<Node *>(cursor->children[cursor->getNumKeys()][0].blockAddress);
-                //cout << "Cursor Address: " << cursor << endl;
-                //cout << "CURSOR GET LEAF IN IF !FOUND: " << cursor->getIsLeaf() << endl;
-                //cout << "CURSOR KEYS =======" << cursor->getNumKeys() << endl;
+                // cout << "Cursor Address: " << cursor << endl;
+                // cout << "CURSOR GET LEAF IN IF !FOUND: " << cursor->getIsLeaf() << endl;
+                // cout << "CURSOR KEYS =======" << cursor->getNumKeys() << endl;
             }
         }
-        //At this point we should have reached a leaf node
-        // Reaching a leaf node and it has space to add more nodes
+        // At this point we should have reached a leaf node
+        //  Reaching a leaf node and it has space to add more nodes
         if (cursor->getNumKeys() < this->maxKeys)
         {
-            //cout << "Reached a leaf node : " << (cursor->getIsLeaf()) << endl;
+            // cout << "Reached a leaf node : " << (cursor->getIsLeaf()) << endl;
             int i = 0;
-            //Find the first last stored key smaller than the current key to insert
+            // Find the first last stored key smaller than the current key to insert
             while (key > cursor->getKey(i) && i < cursor->getNumKeys())
                 i++;
-            //cout << "Position for Insertion: " << i << endl;
-            // Swap all keys after this point to make space for the new key
+            // cout << "Position for Insertion: " << i << endl;
+            //  Swap all keys after this point to make space for the new key
             for (int j = cursor->getNumKeys(); j > i; j--)
             {
-                //cout << "Swapping j " << j << " with " << j - 1 << endl;
-                cursor->setKey(j, cursor->getKey(j-1));
-                cursor->setChildren(j, cursor->getChildren(j-1));
+                // cout << "Swapping j " << j << " with " << j - 1 << endl;
+                cursor->setKey(j, cursor->getKey(j - 1));
+                cursor->setChildren(j, cursor->getChildren(j - 1));
             }
             // Insert the keys into the correct point i
             cout << "Inserting key into position " << i << endl;
             cursor->setKey(i, key);
             cout << "Inserting children into position " << i << endl;
             cursor->setChildren(i, value);
-            //cout << "Incrementing numKeys. New Num keys = " << cursor->getNumKeys() << endl;
+            // cout << "Incrementing numKeys. New Num keys = " << cursor->getNumKeys() << endl;
             cursor->setNumKeys(cursor->getNumKeys() + 1);
-            //cout << "Incrementing keysStored" << endl;
+            // cout << "Incrementing keysStored" << endl;
             this->keysStored++;
             return 1;
         }
@@ -229,26 +220,26 @@ int BPlusTree::insert(float key, const vector<Address> value)
         else if (cursor->numKeys >= maxKeys) // TODO FIXME MAYBE: Insert internal being called too many times
         {
             cout << "Maximum keys exceeded in current node, creating new node" << endl;
-            //Initialize new node
+            // Initialize new node
             Node *newNode = new Node(maxKeys, true);
-            //Link the last pointer of the old node to the pointer of the new leaf node
+            // Link the last pointer of the old node to the pointer of the new leaf node
             cursor->setChildren(cursor->getNumKeys(), vector<Address>{Address(newNode, 0)});
             newNode->setIsLeaf(true);
             // cout << "NEWNODE IS A LEAF: " << newNode->getIsLeaf() << endl;
-            //Move cursor to next node after linking the two leaf nodes together
+            // Move cursor to next node after linking the two leaf nodes together
             cursor = newNode;
-            cursor->setKey(0,key);
+            cursor->setKey(0, key);
             cursor->setNumKeys(cursor->getNumKeys() + 1);
             cursor->setChildren(0, value);
             this->nodesStored++;
             this->keysStored++;
             cout << "NODES STORED AFTER CREATING NEW NODE: " << this->nodesStored << endl;
-            //cout << "PARENT == ROOTNODE: " << (parent == rootNode) << endl; 
-            //cout << "PARENT MEMORY ADDRESS: " << parent << endl;
-            //cout << "ROOTNODE MEMORY ADDRESS: " << rootNode << endl;
-            
+            // cout << "PARENT == ROOTNODE: " << (parent == rootNode) << endl;
+            // cout << "PARENT MEMORY ADDRESS: " << parent << endl;
+            // cout << "ROOTNODE MEMORY ADDRESS: " << rootNode << endl;
+
             // TODO FIXME MAYBE: Insert internal being called too many times
-            if (oldRootNode == rootNode && nodesStored == 2) 
+            if (oldRootNode == rootNode && nodesStored == 2)
             {
                 // TODO: manually insert a parent node if the initial cursor is on root
                 cout << "Manually insert new root node when there are two leaf nodes" << endl;
@@ -262,20 +253,22 @@ int BPlusTree::insert(float key, const vector<Address> value)
                 // newParentNode->children[0].push_back(Address(oldRootNodeAddress->blockAddress, oldRootNodeAddress->offset)); //All values less than 0.477
                 // newParentNode->children[1].push_back(Address(newNodeAddress->blockAddress, newNodeAddress->offset)); //All values greater than or equal to 0.477
                 // TODO: undo these lines of code if not working
-                newParentNode->setChildren(0, vector<Address>{Address(rootNode,0)}) ; //All values less than 0.477
-                newParentNode->setChildren(1, vector<Address>{Address(newNode,0)}) ; //All values greater than or equal to 0.477
-                //cout << "Actual pointer of root node in memory " << (rootNode) << endl;
-                //cout << "Actual pointer of new node in memory " << (newNode) << endl;
-                //cout << "First pointer in parent: " << newParentNode->getChild(0,0).blockAddress << endl;
-                //cout << "Second pointer in parent: " << newParentNode->getChild(1,0).blockAddress << endl;
-                // Set first value of children to be the old root node
+                // newParentNode->setChildren(0, vector<Address>{Address(rootNode,0)}) ; //All values less than 0.477
+                // newParentNode->setChildren(1, vector<Address>{Address(newNode,0)}) ; //All values greater than or equal to 0.477
+                newParentNode->setChild(0, Address(rootNode, 0)); // All values less than 0.477
+                newParentNode->setChild(1, Address(newNode, 0));  // All values greater than or equal to 0.477
+                // cout << "Actual pointer of root node in memory " << (rootNode) << endl;
+                // cout << "Actual pointer of new node in memory " << (newNode) << endl;
+                // cout << "First pointer in parent: " << newParentNode->getChild(0,0).blockAddress << endl;
+                // cout << "Second pointer in parent: " << newParentNode->getChild(1,0).blockAddress << endl;
+                //  Set first value of children to be the old root node
                 newParentNode->setNumKeys(1);
                 newParentNode->setIsLeaf(false);
                 // Update old root node to now be a leaf node
-                //cout << "Address of old root node " << static_cast<Node *>(this->rootNode) << endl;
+                // cout << "Address of old root node " << static_cast<Node *>(this->rootNode) << endl;
                 // Update root node variable to the new parent node
-                //TODO: HARDCODED PARENT! NEED TO CHANGE
-                parent = newParentNode; 
+                // TODO: HARDCODED PARENT! NEED TO CHANGE
+                parent = newParentNode;
                 this->rootNode = newParentNode;
                 cout << "Address of new root node " << static_cast<Node *>(this->rootNode) << endl;
                 this->nodesStored++;
@@ -291,19 +284,20 @@ int BPlusTree::insert(float key, const vector<Address> value)
                 insertInternal(key, parent, newNode);
                 return 1;
             }
-        }            
-        
+        }
     }
     return 0;
 }
 
-int BPlusTree::insertInternal(float key, Node*parent, Node* child){
-    Node* cursor = parent;
+int BPlusTree::insertInternal(float key, Node *parent, Node *child)
+{
+    Node *cursor = parent;
     cout << "Cursor has " << cursor->getNumKeys() << " keys" << endl;
     cout << "Cursor has " << maxKeys << " max keys" << endl;
-    //Check if the value can be inserted in the existing parent
-    if((cursor->getNumKeys() + 1) <= maxKeys){
-        //Find the correct position for inserting
+    // Check if the value can be inserted in the existing parent
+    if ((cursor->getNumKeys() + 1) <= maxKeys)
+    {
+        // Find the correct position for inserting
         cout << "Space in parent, trying to find the location" << endl;
         cursor->setKey(cursor->getNumKeys(), key);
         cursor->setNumKeys(cursor->getNumKeys() + 1);
@@ -321,24 +315,128 @@ int BPlusTree::insertInternal(float key, Node*parent, Node* child){
         // for(int j = cursor->getNumKeys()+1; j>i; j--){
         //     cursor->setChildren(j,cursor->getChildren(j-1));
         // }
-        //Insert new key and pointer to parent
+        // Insert new key and pointer to parent
     }
-    //Splitting the parent node into two
-    else{
-        // Node* newParent = new Node(maxKeys, false);
-        // newParent->setIsLeaf(false);
-        // //Temp list of keys and addresses to insert into the split nodes
-        // float tempKeysList[maxKeys];
-        // vector<Address> tempAddressList(maxKeys+1);
+    // Splitting the parent node into two
+    else
+    {
+        Node *newSibling = new Node(maxKeys, false);
+        newSibling->setIsLeaf(false);
+        // Temp list of keys and addresses to insert into the split nodes
+        float tempKeysList[maxKeys + 1];
+        vector<Address> tempAddressList;
+        //(maxKeys+2) = {nullptr, 0};
         // Copy all keys into temp list
-        // for(int i = 0; i < maxKeys; i++){
-        //     tempKeysList[i] = cursor->getKey(i);
-        // }
-        // // Copy all addresses into temp list
-        // for(int i = 0; i < maxKeys+1; i++){
-        //     tempAddressList.push_back(Address(cursor->getChildren(i)[0].blockAddress, 0));
-        // }
+        for (int i = 0; i < maxKeys; i++)
+        {
+            tempKeysList[i] = cursor->getKey(i);
+        }
+        tempKeysList[maxKeys] = key;
+        // Copy all addresses into temp list
+        for (int i = 0; i < maxKeys + 1; i++)
+        {
+            tempAddressList.push_back(cursor->getChild(i, 0));
+        }
+        tempAddressList.push_back(Address(child, 0));
+        // Split the nodes into two
+        // TODO: Debug this - ceiling working?
+        cursor->setNumKeys((maxKeys + 1) / 2);
+        newSibling->setNumKeys((maxKeys - (maxKeys + 1) / 2));
+        // Reassign keys and pointers to cursor
+        for (int i = 0; i < cursor->getNumKeys(); i++)
+        {
+            cursor->setKey(i, tempKeysList[i]);
+        }
+
+        // Assign keys and pointers to newSibling
+        for (int i = 0, j = cursor->getNumKeys() + 1; i < newSibling->getNumKeys(); i++, j++)
+        {
+            newSibling->setKey(i, tempKeysList[j]);
+        }
+
+        // Assign pointers into the new parent node
+        for (int i = 0, j = cursor->getNumKeys() + 1; i < newSibling->getNumKeys() + 1; i++, j++)
+        {
+            newSibling->setChild(i, tempAddressList[j]);
+        }
+
+        // Remove remaining cursor keys from cursor
+        for (int i = cursor->getNumKeys(); i < cursor->getMaxKeys(); i++)
+        {
+            cursor->setKey(i, 0.0);
+        }
+
+        // Remove remaining cursor pointers from cursor
+        for (int i = cursor->getNumKeys() + 1; i < cursor->getMaxKeys() + 1; i++)
+        {
+            Address nullAddress{nullptr, 0};
+            cursor->setChild(i, nullAddress);
+        }
+
+        // Assign new child to original parent
+        cursor->setChild(cursor->getNumKeys(), Address{child, 0});
+
+        if (cursor == this->rootNode)
+        {
+            Node *newRoot = new Node(maxKeys, false);
+            newRoot->setIsLeaf(false);
+            // Set first key of new root node to be the rightmost key of original parent
+            newRoot->setKey(0, cursor->getKey(cursor->getNumKeys()));
+            newRoot->setNumKeys(newRoot->getNumKeys() + 1);
+            // Assign pointers to new root node
+            newRoot->setChild(0, Address{parent, 0});
+            newRoot->setChild(1, Address{newSibling, 0});
+            // Update class variables
+            this->rootNode = newRoot;
+            this->nodesStored++;
+            this->levels++;
+        }
+        else
+        {
+            // TODO: write a function to get the parent of the current parent
+            Node *parentNode = findParent(this->rootNode, parent, cursor->getKey(0));
+            // insertInternal(cursor->numKeys, parent of cursor, newSibling);
+            insertInternal(tempKeysList[cursor->getNumKeys()], parentNode, newSibling);
+        }
     }
     return 1;
 }
 
+Node *BPlusTree::findParent(Node *rootNode, Node *childNode, float lowerBoundKey)
+{
+    Node *cursor = rootNode;
+    if (cursor->getIsLeaf())
+    {
+        return nullptr;
+    }
+    Node *parent = cursor;
+    while (!cursor->getIsLeaf())
+    {
+        // Check through all pointers of current cursor to find pointer to childNode
+        for (int i = 0; i < cursor->getNumKeys() + 1; i++)
+        {
+            if (cursor->getChild(i, 0).blockAddress == childNode)
+            {
+                return parent;
+            }
+        }
+        // We cannot find a direct match, so look for the pointer to expand
+        for (int i = 0; i < cursor->getNumKeys(); i++)
+        {
+            if (lowerBoundKey < cursor->getKey(i))
+            {
+                // TODO: our approach
+                parent = cursor;
+                cursor = static_cast<Node *>(cursor->getChild(i, 0).blockAddress);
+                break;
+            }
+            if (i == cursor->getNumKeys() - 1)
+            {
+                parent = cursor;
+                cursor = static_cast<Node *>(cursor->getChild(i + 1, 0).blockAddress);
+                break;
+            }
+        }
+    }
+    return nullptr;
+}
