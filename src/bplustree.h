@@ -42,7 +42,11 @@ class Node{
             return children[index];
         };
         Address getChild(int index, int childIndex){
-            return children[index][childIndex];
+            if(children[index][childIndex].blockAddress != nullptr){
+                return children[index][childIndex];
+            }
+            else
+                return Address(nullptr, 0);
         };
         int getIsLeaf(){
             return isLeaf;

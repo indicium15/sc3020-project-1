@@ -69,7 +69,7 @@ int main()
             continue;
         }
         // Comment out for final demonstration
-        if (lineNumber == 45)
+        if (lineNumber == 100)
         {
             break;
         }
@@ -235,22 +235,21 @@ int main()
         cout << "Count: " << count << endl;
         std::cout << "Key: " << pair.first << ", Value: " << &pair.second << endl;
         tree.insert(pair.first, pair.second);
-        cout << "Content of the root node: " << endl;
+        // cout << "Content of the root node: " << endl;
         for (int i = 0; i < tree.rootNode->getNumKeys(); i++)
         {
-            cout << "Number of Keys: " << tree.rootNode->getNumKeys() << endl;
             cout << tree.rootNode->getChild(i, 0).blockAddress << " | "<< tree.rootNode->getKey(i) << " | ";
         }
-        cout << tree.rootNode->getChild(tree.rootNode->getNumKeys(), 0).blockAddress << endl;
+        if(tree.rootNode->getChild(tree.rootNode->getNumKeys(), 0).blockAddress != nullptr)
+            cout << tree.rootNode->getChild(tree.rootNode->getNumKeys(), 0).blockAddress << endl;
+        else
+            cout << "NULL" << endl;
         cout << "Number of nodes: " << tree.nodesStored << endl;
         cout << "Number of keys: " << tree.keysStored << endl;
         cout << "Number of levels: " << tree.levels << endl;
     }
-    Node* check = (Node *)tree.rootNode->getChild(2, 0).blockAddress;
-    cout << "Content of the 3rd node: " << check->getKey(0) << endl;
-    // tree.displayTree();
     return 1;
-    // cout << "Number of nodes: " << tree.nodesStored << endl;
-    // cout << "Number of keys: " << tree.keysStored << endl;
-    // cout << "Number of levels: " << tree.levels << endl;
+    cout << "Number of nodes: " << tree.nodesStored << endl;
+    cout << "Number of keys: " << tree.keysStored << endl;
+    cout << "Number of levels: " << tree.levels << endl;
 }
