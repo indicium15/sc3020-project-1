@@ -1,6 +1,8 @@
 #include "storage.h"
 #include "record.h"
+#include "types.h"
 #include <iostream>
+#include <map>
 #include <string>
 #include <vector>
 #include <memory>
@@ -191,9 +193,89 @@ int Storage::recordsInBlock(int blockID)
     return 0;
 }
 
-uchar *Storage::getBlockAddress(int blockID)
+vector<Record> Storage::readRecordsfromAddresses(vector<Address>addresses){
+    //Initialize a map to store the indexes we want to read for each blockID
+    int blockAccessCount = 0;
+    map<int, vector<int>> indexMap;
+    for(int i = 0; i < addresses.size(); i++){
+        int blockID = getBlockID(addresses[i].blockAddress);
+        int index = addresses[i].offset / sizeof(Record);
+        if(indexMap.find(blockID) != indexMap.end()){
+            //Push index to existing vector if the key already exists
+            indexMap[blockID].push_back(index);
+        }
+        else{
+            //Create and push a vector with index value if the key does not exist 
+            indexMap[blockID] = vector<int>{index};
+            // indexMap.insert(blockID, vector<int>{index});
+        }
+    }
+    //Value to return, vector of Records
+    vector<Record> results;
+    //Iterate through all keys of hashmap (block ID we want to read)
+    for(const auto &pair: indexMap){
+        //Perform a unit reading of each block
+        vector<Record> recordsFromBlock = readRecordsFromBlock(pair.first);
+        blockAccessCount++;
+        //TODO: Make sure to write in the report how we're reading each block only once to optimise the "I/O operations"
+        //Get the indexes we want to read from each block
+        vector<int> indexes = pair.second; 
+        for(int index: indexes){
+            //Push each index into the results
+            results.push_back(recordsFromBlock.at(index));
+        }
+    }
+    cout << "Number of Data Blocks Accessed: " << blockAccessCount << endl;
+    return results;
+}
+
+//TODO: scope for optimization here - call a function for indexMap
+
+vector<Record> Storage::readRecordsfromNestedAddresses(vector<vector<Address>> addresses){
+   int blockAccessCount = 0;
+    map<int, vector<int>> indexMap;
+    for(int i = 0; i < addresses.size(); i++){
+        vector<Address> cursor = addresses[i];
+        for(int j = 0; j < cursor.size(); j++){
+            int blockID = getBlockID(cursor[j].blockAddress);
+            int index = cursor[j].offset / sizeof(Record);
+            if(indexMap.find(blockID) != indexMap.end()){
+                //Push index to existing vector if the key already exists
+                indexMap[blockID].push_back(index);
+            }
+            else{
+                //Create and push a vector with index value if the key does not exist 
+                indexMap[blockID] = vector<int>{index};
+                // indexMap.insert(blockID, vector<int>{index});
+            }
+        }
+    }
+    //Value to return, vector of Records
+    vector<Record> results;
+    //Iterate through all keys of hashmap (block ID we want to read)
+    for(const auto &pair: indexMap){
+        //Perform a unit reading of each block
+        vector<Record> recordsFromBlock = readRecordsFromBlock(pair.first);
+        blockAccessCount++;
+        //TODO: Make sure to write in the report how we're reading each block only once to optimise the "I/O operations"
+        //Get the indexes we want to read from each block
+        vector<int> indexes = pair.second; 
+        for(int index: indexes){
+            //Push each index into the results
+            results.push_back(recordsFromBlock.at(index));
+        }
+    }
+    cout << "Number of Data Blocks Accessed: " << blockAccessCount << endl;
+    return results; 
+}
+
+uchar* Storage::getBlockAddress(int blockID)
 {
     return (baseAddress + (blockID * blockSize));
+}
+
+int Storage::getBlockID(void* blockAddress){
+    return(static_cast<uchar *>(blockAddress) - baseAddress) / blockSize;
 }
 
 // Getter functions for private class attributes

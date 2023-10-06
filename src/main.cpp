@@ -266,22 +266,77 @@ int main()
     //Experiment 3
     //TODO: Write the average of Field Goal 3 percentage home
     //TODO: Running time retrieval of b+ tree
-    //TODO: Number of data blocks accessed by a brute force scan
     cout << "------------------------------------------" << endl;
     cout << "Experiment 3" << endl;
+    auto experimentThreeStart = chrono::high_resolution_clock::now();
     vector<Address> results = tree.searchKey(0.5);
+    vector<Record> resultRecords = storage.readRecordsfromAddresses(results);
+    auto experimentThreeEnd = chrono::high_resolution_clock::now();
+    chrono::nanoseconds experimentThreeRuntime = chrono::duration_cast<chrono::nanoseconds>(experimentThreeEnd - experimentThreeStart);
     int resultsLength = results.size();
+    int resultRecordsLength = resultRecords.size();
     cout << "Number of Records with FG_PCT 0.5: " << resultsLength << endl;
-
+    cout << "Linear Search for Records with FG_PCT 0.5" << endl;
+    int linearSearchResultsLength = 0;
+    int linearSearchDataBlocksAccessed = 0;
+    //TODO: Number of data blocks accessed by a brute force scan
+    bool flag = false;
+    for(int i = 0; i<storage.getBlocksUsed(); i++){
+        linearSearchDataBlocksAccessed++;
+        vector<Record>recordsInBlock = storage.readRecordsFromBlock(i);
+        for(Record record: recordsInBlock){
+            if(record.fgPct == 0.5){
+                linearSearchResultsLength++;
+            }
+            if(record.fgPct > 0.5){
+                flag = true;
+                break;
+            }
+        }
+        if(flag){
+            break;
+        }
+    }
+    //Finding average of fg3pct of Record
+    float sum = 0.0f;
+    for(Record record: resultRecords){
+        sum+=record.fg3Pct;
+    }
+    float average = sum / static_cast<float>(resultRecords.size());
+    cout << "Average of FG3_PCT_HOME for Records Returned: " << average << endl;
+    cout << "Number of Records with FG_PCT 0.5 with Linear Search: " << linearSearchResultsLength << endl;
+    cout << "Number of Data Blocks accessed for query with Linear Search: " << linearSearchDataBlocksAccessed << endl;
+    cout << "Runtime of Search and Retrieval: " << experimentThreeRuntime.count() << " nanoseconds" << endl;
+    
     //Experiment 4
     cout << "------------------------------------------" << endl;
     cout << "Experiment 4" << endl;
+    auto experimentFourStart = chrono::high_resolution_clock::now();
     vector<vector<Address>> rangedResults = tree.searchRange(0.6,1);
+    vector<Record> rangedResultsRecords = storage.readRecordsfromNestedAddresses(rangedResults);
+    auto experimentFourEnd = chrono::high_resolution_clock::now();
+    chrono::nanoseconds experimentFourRuntime = chrono::duration_cast<chrono::nanoseconds>(experimentFourEnd - experimentFourStart);
     int rangedResultsSize = 0;
     for(vector<Address> vector: rangedResults){
         rangedResultsSize += vector.size();
     }
-    cout << "Number of Records with FG_PCT between 0.6 and 1 (inclusive): " << rangedResultsSize << endl;
+    cout << "Number of Records (Address Structure) with FG_PCT between 0.6 and 1 (inclusive): " << rangedResultsSize << endl;
+    cout << "Number of Records (Record Structure) with FG_PCT between 0.6 and 1 (inclusive): " << rangedResultsRecords.size() << endl;
+    int rangedLinearSeachResultsLength = 0;
+    int rangedLinearSearchDataBlocksAccessed = 0;
+    for(int i = 0; i<storage.getBlocksUsed(); i++){
+        rangedLinearSearchDataBlocksAccessed++;
+        vector<Record>recordsInBlock = storage.readRecordsFromBlock(i);
+        for(Record record: recordsInBlock){
+            if(record.fgPct >= 0.6 && record.fgPct <= 1){
+                rangedLinearSeachResultsLength++;
+            }
+        }
+    }
+    cout << "Number of Records with FG_PCT between 0.6 and 1 (inclusive) with Linear Search: " << rangedLinearSeachResultsLength << endl;
+    cout << "Number of Data Blocks accessed for ranged query with Linear Search: " << rangedLinearSearchDataBlocksAccessed << endl;
+    cout << "Runtime of Search and Retrieval: " << experimentFourRuntime.count() << " nanoseconds" << endl; 
+    
     // Restore the original std::cout buffer
     cout.rdbuf(coutBuffer);
     // Close the output file
