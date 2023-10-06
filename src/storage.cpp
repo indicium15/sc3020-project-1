@@ -72,8 +72,7 @@ bool Storage::allocateRecord(Record record)
  * @param recordSize size in bytes of the record to be allocated
  * @return uchar* memory pointer to the available space in the database
  */
-uchar *Storage::findAvailableBlock(int recordSize)
-{
+uchar *Storage::findAvailableBlock(int recordSize){
     // Error case: no blocks are available
     if (currentBlockSize + recordSize > blockSize && availableBlocks == 0)
     {

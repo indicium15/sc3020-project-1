@@ -69,7 +69,7 @@ int main()
             continue;
         }
         // Comment out for final demonstration
-        if (lineNumber == 50)
+        if (lineNumber == 45)
         {
             break;
         }
@@ -231,7 +231,6 @@ int main()
     int count = 0;
     for (const auto &pair : recordMap)
     {
-        // //TODO: remove this when running on whole database
         count++;
         cout << "Count: " << count << endl;
         std::cout << "Key: " << pair.first << ", Value: " << &pair.second << endl;
@@ -239,14 +238,17 @@ int main()
         cout << "Content of the root node: " << endl;
         for (int i = 0; i < tree.rootNode->getNumKeys(); i++)
         {
-            cout << tree.rootNode->getKey(i) << " | ";
+            cout << "Number of Keys: " << tree.rootNode->getNumKeys() << endl;
+            cout << tree.rootNode->getChild(i, 0).blockAddress << " | "<< tree.rootNode->getKey(i) << " | ";
         }
-        cout << endl;
+        cout << tree.rootNode->getChild(tree.rootNode->getNumKeys(), 0).blockAddress << endl;
         cout << "Number of nodes: " << tree.nodesStored << endl;
         cout << "Number of keys: " << tree.keysStored << endl;
         cout << "Number of levels: " << tree.levels << endl;
     }
-    tree.displayTree();
+    Node* check = (Node *)tree.rootNode->getChild(2, 0).blockAddress;
+    cout << "Content of the 3rd node: " << check->getKey(0) << endl;
+    // tree.displayTree();
     return 1;
     // cout << "Number of nodes: " << tree.nodesStored << endl;
     // cout << "Number of keys: " << tree.keysStored << endl;

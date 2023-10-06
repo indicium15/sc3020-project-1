@@ -33,10 +33,10 @@ class Node{
             return keys[index];
         };
         int getNumKeys(){
-            return static_cast<int>(numKeys);
+            return (int)(numKeys);
         };
         int getMaxKeys(){
-            return static_cast<int>(maxKeys);
+            return (int)(maxKeys);
         };
         vector<Address> getChildren(int index){
             return children[index];
