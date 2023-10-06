@@ -523,3 +523,93 @@ vector<vector<Address>> BPlusTree::searchRange(float low, float high){
     cout << "Number of index nodes accessed: " << indexNodesAccessed << endl;
     return results;
 }
+
+int BPlusTree::deleteNode(float key){
+    // Check if tree is empty
+    if(this->rootNode == nullptr){
+        cerr << "Tree is empty" << endl;
+    }
+    const int minimumKeysForLeafNode = (maxKeys + 1) / 2;
+    Node *cursor = this->rootNode;
+    Node *parent;
+    int leftSibling, rightSibling; // Index of the left and the right leaf node that we need to borrow from
+
+    // Finding the leaf node with the key to delete
+    while(!cursor->getIsLeaf()){
+        parent = cursor;
+        
+        // Look for all the keys in the current node
+        for(int i=0;i<cursor->getNumKeys();i++){
+            leftSibling = i-1;
+            rightSibling = i+1;
+            
+            // Find the key that we have to delete
+            if(key < cursor->getKey(i)){
+                cursor = static_cast<Node *>(cursor->getChild(i,0).blockAddress);
+                break;
+            }
+            // If we cannot find, go to the last pointer in the node
+            if(i == cursor->getNumKeys()-1){
+                leftSibling = i;
+                //TODO: do we need to update the right sibling here?
+                rightSibling = i+2;
+                cursor = static_cast<Node *>(cursor->getChild(i+1,0).blockAddress);
+                break;
+            }
+        }
+    }
+
+    // Cursor now points to the leaf node that contains the key that needs to be deleted
+
+    bool found = false;
+    int indexToBeDeleted;
+
+    // Traversing the leaf node to find the index of the specified key
+    for(int i = 0; i < cursor->getNumKeys(); i++){
+        if(cursor->getKey(i) == key){
+            found = true;
+            indexToBeDeleted = i;
+            break;
+        }
+    }
+
+    if(found == false){
+        cout << "Can't find the key in the tree!" << endl;
+    }
+
+    // Removing the specified key and its pointer in the memory from the node
+    for (int i = indexToBeDeleted; i < cursor->getNumKeys(); i++)
+    {
+        cursor->setKey(i, cursor->getKey(i+1));
+        cursor->setChildren(i, cursor->getChildren(i+1));
+    }
+    // Decrement number of keys stored in the current node
+    cursor->setNumKeys(cursor->getNumKeys()-1);
+    // Manually set the last node since it is not covered by for loop range
+    cursor->setChildren(cursor->getNumKeys(), cursor->getChildren(cursor->getNumKeys()+1));
+
+    for(int i=cursor->getNumKeys()+1; i < maxKeys+1; i++){
+        cursor->setChildren(i, vector<Address>{Address{nullptr, 0}});
+    }
+    
+    //Deleting a key from the root
+    if(cursor == this->rootNode){
+        if(cursor->getNumKeys() == 0){
+            cout << "Entire index has been deleted" << endl;
+            rootNode = nullptr;
+        }
+        cout << "Successfully deleted " << key << endl;
+        return 1;
+    }
+    
+    //If we do not need to borrow from other nodes, end function
+    if(cursor->getNumKeys() >= minimumKeysForLeafNode){
+        cout << "Successfully deleted " << key << endl;
+        return 1;
+    }
+
+    //TODO:line 182 of github: https://github.com/chenningg/cz4031-b-plus-tree/blob/master/src/b_plus_tree_remove.cpp
+    
+    
+
+}

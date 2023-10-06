@@ -79,6 +79,7 @@ class BPlusTree{
         int blockSize;
         int insert(float key, const vector<Address> value);
         int insertInternal(float key, Node* parent, Node* child);
+        int deleteNode(float key);
         int remove(float key);
         void displayTree(Node *cursor, int level);
         void displayNode(Node* node);
