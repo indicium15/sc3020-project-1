@@ -28,6 +28,7 @@ class Node{
     public:
         Node(int maxKeys, bool isLeaf);
         ~Node();
+        
 
         float getKey(int index){
             return keys[index];
@@ -70,6 +71,7 @@ class BPlusTree{
         int insert(float key, const vector<Address>& value);
         int insertInternal(float key, Node* parent, Node* child);
         int remove(float key);
+        int findNodeForKey(float key, Node* currentNode);
         int removeInternal(float key, Node* parent, Node* child);
         void redistributeLeafNodes(Node* node);
         void redistributeInternalNodes(Node* node);
@@ -78,7 +80,6 @@ class BPlusTree{
         void mergeInternalNodes(Node* node);
         void displayTree();
         void displayNode(Node* node, int level);
-        
         BPlusTree();
         ~BPlusTree();
 };
