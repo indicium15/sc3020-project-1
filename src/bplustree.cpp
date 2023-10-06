@@ -88,6 +88,7 @@ void BPlusTree::displayTree(Node *cursor, int level)
             cout << "   ";
         }
         cout << " level " << level << ": ";
+        //cout << " Node Address: " << cursor << ": ";
         displayNode(cursor);
     }
     if (cursor->getIsLeaf() != true)
@@ -439,4 +440,86 @@ Node *BPlusTree::findParent(Node *rootNode, Node *childNode, float lowerBoundKey
         }
     }
     return nullptr;
+}
+
+vector<Address> BPlusTree::searchKey(float key){
+    if(this->rootNode == nullptr){
+        //Error case: tree is empty
+        cerr << "Tree is empty" << endl;
+    }
+    Node* cursor = this->rootNode;
+    int indexNodesAccessed = 1; // Tracking the total number of index nodes accessed
+    displayNode(cursor);
+    while(!cursor->getIsLeaf()){
+        for(int i = 0; i < cursor->getNumKeys(); i++){
+            // Find the key in the current node
+            if(key < cursor->getKey(i)){
+                cursor = static_cast<Node *>(cursor->getChild(i,0).blockAddress);
+                displayNode(cursor);
+                indexNodesAccessed++;
+                break;
+            }
+            //If we cannot find in any of the current keys, go to the last pointer
+            if(i == cursor->getNumKeys()-1){
+                cursor = static_cast<Node *>(cursor->getChild(i+1,0).blockAddress);
+                displayNode(cursor);
+                indexNodesAccessed++;
+                break;
+            }
+        }
+    }
+    //Found a leaf node,traverse through it to find the key
+    for(int i = 0; i<cursor->getNumKeys(); i++){
+        if(cursor->getKey(i) == key){
+            cout << "Number of index nodes accessed: " << indexNodesAccessed << endl;
+            return cursor->getChildren(i);
+        }
+    }
+    return vector<Address>{};
+}
+
+vector<vector<Address>> BPlusTree::searchRange(float low, float high){
+    if(this->rootNode == nullptr){
+        //Error case: tree is empty
+        cerr << "Tree is empty" << endl;
+    }
+    vector<vector<Address>> results;
+    Node* cursor = this->rootNode;
+    int indexNodesAccessed = 1; // Tracking the total number of index nodes accessed
+    displayNode(cursor);
+    while(!cursor->getIsLeaf()){
+        for(int i = 0; i < cursor->getNumKeys(); i++){
+            // Find the key in the current node
+            if(low < cursor->getKey(i)){
+                cursor = static_cast<Node *>(cursor->getChild(i,0).blockAddress);
+                displayNode(cursor);
+                indexNodesAccessed++;
+                break;
+            }
+            //If we cannot find in any of the current keys, go to the last pointer
+            if(i == cursor->getNumKeys()-1){
+                cursor = static_cast<Node *>(cursor->getChild(i+1,0).blockAddress);
+                displayNode(cursor);
+                indexNodesAccessed++;
+                break;
+            }
+        }
+    }
+    //Found a leaf node,traverse through it to find the range
+    bool flag = false;
+    Node* temp;
+    while(!flag){
+        for(int i = 0; i<cursor->getNumKeys(); i++){
+            if(low <= cursor->getKey(i) && cursor->getKey(i) <= high){
+                results.push_back(cursor->getChildren(i));
+            }
+            if(cursor->getKey(i)>high){
+                flag = true;
+            }
+        }
+        temp = static_cast<Node *>(cursor->getChild(cursor->getNumKeys(), 0).blockAddress);
+        cursor = temp;
+    }
+    cout << "Number of index nodes accessed: " << indexNodesAccessed << endl;
+    return results;
 }

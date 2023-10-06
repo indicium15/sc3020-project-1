@@ -262,6 +262,26 @@ int main()
     cout << "Number of keys: " << tree.keysStored << endl;
     cout << "Number of levels: " << tree.levels << endl;
     tree.displayTree(tree.rootNode,1);
+    
+    //Experiment 3
+    //TODO: Write the average of Field Goal 3 percentage home
+    //TODO: Running time retrieval of b+ tree
+    //TODO: Number of data blocks accessed by a brute force scan
+    cout << "------------------------------------------" << endl;
+    cout << "Experiment 3" << endl;
+    vector<Address> results = tree.searchKey(0.5);
+    int resultsLength = results.size();
+    cout << "Number of Records with FG_PCT 0.5: " << resultsLength << endl;
+
+    //Experiment 4
+    cout << "------------------------------------------" << endl;
+    cout << "Experiment 4" << endl;
+    vector<vector<Address>> rangedResults = tree.searchRange(0.6,1);
+    int rangedResultsSize = 0;
+    for(vector<Address> vector: rangedResults){
+        rangedResultsSize += vector.size();
+    }
+    cout << "Number of Records with FG_PCT between 0.6 and 1 (inclusive): " << rangedResultsSize << endl;
     // Restore the original std::cout buffer
     cout.rdbuf(coutBuffer);
     // Close the output file

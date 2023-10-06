@@ -83,6 +83,8 @@ class BPlusTree{
         void displayTree(Node *cursor, int level);
         void displayNode(Node* node);
         Node* findParent(Node* rootNode, Node* childNode, float lowerBoundKey);
+        vector<Address> searchKey(float key);
+        vector<vector<Address>> searchRange(float lowerKey, float upperKey);
         BPlusTree();
         ~BPlusTree();
 };
