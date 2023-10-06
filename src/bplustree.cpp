@@ -508,7 +508,7 @@ vector<vector<Address>> BPlusTree::searchRange(float low, float high){
     //Found a leaf node,traverse through it to find the range
     bool flag = false;
     Node* temp;
-    while(!flag){
+    while(cursor!=nullptr && flag!=true){
         for(int i = 0; i<cursor->getNumKeys(); i++){
             if(low <= cursor->getKey(i) && cursor->getKey(i) <= high){
                 results.push_back(cursor->getChildren(i));
