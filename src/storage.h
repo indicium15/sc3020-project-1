@@ -4,6 +4,7 @@
 #include <iostream>
 #include <unordered_map>
 #include "record.h"
+#include "bplustree.h"
 typedef unsigned int uint;
 typedef unsigned char uchar;
 
@@ -46,10 +47,13 @@ public:
     // Function to print the content for a block
     vector<Record> readRecordsFromBlock(int blockID);
     vector<Record> readAllRecords();
+    vector<Record> readRecordsfromAddresses(vector<Address> address);
+    vector<Record> readRecordsfromNestedAddresses(vector<vector<Address>> address);
     // Return the number of records for a blockID by looking up the structure
     int recordsInBlock(int blockID);
     //Return the header memory address for a block ID
     uchar* getBlockAddress(int blockID);
+    int getBlockID(void* blockAddress);
     // Getter functions for private attributes
     int getRecordsStored();
     int getBlocksUsed();

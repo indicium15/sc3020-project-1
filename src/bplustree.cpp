@@ -426,7 +426,6 @@ Node *BPlusTree::findParent(Node *rootNode, Node *childNode, float lowerBoundKey
         {
             if (lowerBoundKey < cursor->getKey(i))
             {
-                // TODO: our approach
                 parent = cursor;
                 cursor = static_cast<Node *>(cursor->getChild(i, 0).blockAddress);
                 break;
