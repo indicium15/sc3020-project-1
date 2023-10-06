@@ -46,6 +46,16 @@ bool compareRecords(const Record &a, const Record &b)
 
 int main()
 {
+    
+    string outputFileName = "output.txt";
+    ofstream outputFile(outputFileName);
+    if (!outputFile.is_open()) {
+        cerr << "Failed to open the file for writing: " << outputFileName << endl;
+        return 1; // Exit with an error code
+    }
+    streambuf* coutBuffer = cout.rdbuf();
+    cout.rdbuf(outputFile.rdbuf());
+
     vector<Record> records;
     map<float, vector<Address>> recordMap;
     uint databaseSize = 100 * 1024 * 1024;
@@ -69,10 +79,10 @@ int main()
             continue;
         }
         // Comment out for final demonstration
-        if (lineNumber == 50)
-        {
-            break;
-        }
+        // if (lineNumber == 500)
+        // {
+        //     break;
+        // }
         istringstream iss(line);
         vector<string> fields;
         string field;
@@ -231,24 +241,30 @@ int main()
     int count = 0;
     for (const auto &pair : recordMap)
     {
-        // //TODO: remove this when running on whole database
         count++;
         cout << "Count: " << count << endl;
         std::cout << "Key: " << pair.first << ", Value: " << &pair.second << endl;
         tree.insert(pair.first, pair.second);
-        cout << "Content of the root node: " << endl;
+        // cout << "Content of the root node: " << endl;
         for (int i = 0; i < tree.rootNode->getNumKeys(); i++)
         {
-            cout << tree.rootNode->getKey(i) << " | ";
+            cout << tree.rootNode->getChild(i, 0).blockAddress << " | "<< tree.rootNode->getKey(i) << " | ";
         }
-        cout << endl;
+        if(tree.rootNode->getChild(tree.rootNode->getNumKeys(), 0).blockAddress != nullptr)
+            cout << tree.rootNode->getChild(tree.rootNode->getNumKeys(), 0).blockAddress << endl;
+        else
+            cout << "NULL" << endl;
         cout << "Number of nodes: " << tree.nodesStored << endl;
         cout << "Number of keys: " << tree.keysStored << endl;
         cout << "Number of levels: " << tree.levels << endl;
     }
-    tree.displayTree();
+    cout << "Number of nodes: " << tree.nodesStored << endl;
+    cout << "Number of keys: " << tree.keysStored << endl;
+    cout << "Number of levels: " << tree.levels << endl;
+    tree.displayTree(tree.rootNode,1);
+    // Restore the original std::cout buffer
+    cout.rdbuf(coutBuffer);
+    // Close the output file
+    outputFile.close();
     return 1;
-    // cout << "Number of nodes: " << tree.nodesStored << endl;
-    // cout << "Number of keys: " << tree.keysStored << endl;
-    // cout << "Number of levels: " << tree.levels << endl;
 }
