@@ -41,6 +41,9 @@ class Node{
         vector<Address> getChildren(int index){
             return children[index];
         };
+        Address getChild(int index, int childIndex){
+            return children[index][childIndex];
+        };
         int getIsLeaf(){
             return isLeaf;
         };
@@ -67,11 +70,11 @@ class BPlusTree{
         int nodesStored;
         int nodeSize;
         int blockSize;
-        int insert(float key, const vector<Address>& value);
+        int insert(float key, const vector<Address> value);
         int insertInternal(float key, Node* parent, Node* child);
         int remove(float key);
-        void displayTree();
-        void displayNode(Node* node, int level);
+        void displayTree(Node *cursor, int level);
+        void displayNode(Node* node);
         
         BPlusTree();
         ~BPlusTree();
