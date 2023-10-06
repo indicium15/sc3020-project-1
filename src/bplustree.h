@@ -28,19 +28,25 @@ class Node{
     public:
         Node(int maxKeys, bool isLeaf);
         ~Node();
-        
 
         float getKey(int index){
             return keys[index];
         };
         int getNumKeys(){
-            return static_cast<int>(numKeys);
+            return (int)(numKeys);
         };
         int getMaxKeys(){
-            return static_cast<int>(maxKeys);
+            return (int)(maxKeys);
         };
         vector<Address> getChildren(int index){
             return children[index];
+        };
+        Address getChild(int index, int childIndex){
+            if(children[index][childIndex].blockAddress != nullptr){
+                return children[index][childIndex];
+            }
+            else
+                return Address(nullptr, 0);
         };
         int getIsLeaf(){
             return isLeaf;
@@ -53,6 +59,9 @@ class Node{
         };
         void setChildren(int index, vector<Address> children){
             this->children[index] = children;
+        };
+        void setChild(int index, Address child){
+            this->children[index][0] = child;
         };
         void setIsLeaf(bool isLeaf){
             this->isLeaf = isLeaf;
@@ -68,18 +77,12 @@ class BPlusTree{
         int nodesStored;
         int nodeSize;
         int blockSize;
-        int insert(float key, const vector<Address>& value);
+        int insert(float key, const vector<Address> value);
         int insertInternal(float key, Node* parent, Node* child);
         int remove(float key);
-        Node* findNodeForKey(float key, Node* currentNode);
-        int removeInternal(float key, Node* parent, Node* child);
-        void redistributeLeafNodes(Node* node);
-        void redistributeInternalNodes(Node* node);
-        void deleteNode(Node *node);
-        void mergeLeafNodes(Node* node);
-        void mergeInternalNodes(Node* node);
-        void displayTree();
-        void displayNode(Node* node, int level);
+        void displayTree(Node *cursor, int level);
+        void displayNode(Node* node);
+        Node* findParent(Node* rootNode, Node* childNode, float lowerBoundKey);
         BPlusTree();
         ~BPlusTree();
 };
