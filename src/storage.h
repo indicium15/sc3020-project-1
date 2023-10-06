@@ -33,7 +33,6 @@ public:
     Storage(uint diskCapacity, uint blockSize);
     // Destructor
     ~Storage();
-    // TODO: Write a function to parse file data and return record object
     // Allocate memory to a block
     bool allocateBlock();
     // Allocate memory to a record
@@ -49,6 +48,8 @@ public:
     vector<Record> readAllRecords();
     // Return the number of records for a blockID by looking up the structure
     int recordsInBlock(int blockID);
+    //Return the header memory address for a block ID
+    uchar* getBlockAddress(int blockID);
     // Getter functions for private attributes
     int getRecordsStored();
     int getBlocksUsed();

@@ -13,14 +13,13 @@
 #include <iomanip>
 
 using namespace std;
+typedef unsigned char uchar;
 // Used for calculating the date offset in the function dateToOffset()
 using days = chrono::duration<int, ratio<60 * 60 * 24>>;
 
-Record::Record(unsigned short int recordID, int date, uint8_t team, uint8_t points, uint8_t rebounds,
-               uint8_t assists, float fgPercentage, float ftPercentage, float fg3Percentage,
-               bool homeWins)
-    : recordID(recordID), gameDate(date), teamID(team), pts(points), ast(assists), reb(rebounds),
-      fgPct(fgPercentage), ftPct(ftPercentage), fg3Pct(fg3Percentage), homeTeamWins(homeWins){};
+Record::Record(float fgPercentage, float ftPercentage, float fg3Percentage, int date, uchar* blockAddress, int offset, unsigned short int recordID, uint8_t teamID, uint8_t points, uint8_t assists, uint8_t rebounds, bool homeTeamWins)
+    : recordID(recordID), gameDate(date), teamID(teamID), pts(points), ast(assists), reb(rebounds),
+      fgPct(fgPercentage), ftPct(ftPercentage), fg3Pct(fg3Percentage), homeTeamWins(homeTeamWins), offset(offset), blockAddress(blockAddress){};
 
 /**
  * @brief Constructor from record that converts the data read from a file format to a Record object
@@ -35,20 +34,21 @@ Record::Record(unsigned short int recordID, int date, uint8_t team, uint8_t poin
  * @param fg3Pct 
  * @param homeTeamWins 
  */
-Record::Record(unsigned short int recordID, string gameDateStr, int teamID, uint8_t pts, uint8_t reb, uint8_t ast, float fgPct, float ftPct, float fg3Pct, int homeTeamWins)
+Record::Record(unsigned short int recordID, string gameDateStr, uint8_t teamID, uint8_t pts, uint8_t reb, uint8_t ast, float fgPct, float ftPct, float fg3Pct, int homeTeamWins, uchar* blockAddress, unsigned short int offset)
 {
-    this->recordID = recordID;
-    int gameDateOffset = dateToOffset(gameDateStr);
-    uint8_t teamIDOffset = teamIDToOffset(teamID);
-    bool homeTeamWinsBoolean = winsToBool(homeTeamWins);
-    this->gameDate = gameDateOffset;
-    this->teamID = teamIDOffset;
-    this->pts = pts;
-    this->reb = reb;
-    this->ast = ast;
     this->fgPct = fgPct;
     this->ftPct = ftPct;
     this->fg3Pct = fg3Pct;
+    int gameDateOffset = dateToOffset(gameDateStr);
+    this->gameDate = gameDateOffset;
+    this->blockAddress = blockAddress;
+    this->recordID = recordID;
+    this->offset = offset;
+    this->teamID = teamID;
+    this->pts = pts;
+    this->reb = reb;
+    this->ast = ast;
+    bool homeTeamWinsBoolean = winsToBool(homeTeamWins);
     this->homeTeamWins = homeTeamWinsBoolean;
 }
 
@@ -147,10 +147,16 @@ int Record::boolWinsToInt(bool wins)
 
 /**
  * @brief Function that provides a print output of a record
- * 
  */
 void Record::print() const
 {
-    std::cout << "RECORD ID: " << recordID << "GAME_DATE_EST: " << gameDate << " TEAM_ID_home: " << +teamID << " PTS_home: " << +pts << " FG_PCT_home: " << fgPct << " FT_PCT_home: " << ftPct << " FG3_PCT_home: " << fg3Pct << " AST_home: " << +ast << " REB_home: " << +reb << " HOME_TEAM_WINS: " << homeTeamWins << endl;
+    std::cout << "RECORD ID: " << recordID << " GAME_DATE_EST: " << gameDate << " TEAM_ID_home: " << +teamID << " PTS_home: " << +pts << " FG_PCT_home: " << fgPct << " FT_PCT_home: " << ftPct << " FG3_PCT_home: " << fg3Pct << " AST_home: " << +ast << " REB_home: " << +reb << " HOME_TEAM_WINS: " << homeTeamWins << " BLOCK ADDRESS: " << static_cast<void*>(blockAddress) << " OFFSET: " << static_cast<int>(offset) << endl; 
+}
 
+void Record::setBlockAddress(uchar* blockAddress){
+    this->blockAddress = blockAddress;
+}
+
+void Record::setOffset(int offset){
+    this->offset = offset;
 }

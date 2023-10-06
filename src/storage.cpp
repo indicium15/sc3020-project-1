@@ -5,6 +5,7 @@
 #include <vector>
 #include <memory>
 #include <cstdlib>
+#include <cstdint>
 
 using namespace std;
 typedef unsigned int uint;
@@ -38,15 +39,21 @@ bool Storage::allocateRecord(Record record)
         return false;
     }
     // Try to find an available block and get the address of it
-    uchar *blockAddress = findAvailableBlock(sizeof(record));
+    uchar *blockAddress = findAvailableBlock(sizeof(Record));
     if (!blockAddress)
     {
         cerr << "Failed to find an available block" << endl;
         return false;
     }
+    // Update record header
+    record.setBlockAddress(this->getBlockAddress(this->currentBlock));
+    int offset = currentBlockSize;
+    record.setOffset(offset);
+    record.print();
     // Copy the record data to the memory address
-    memcpy(blockAddress, &record, sizeof(record));
-    currentBlockSize += sizeof(record);
+    memcpy(blockAddress, &record, sizeof(Record));
+    // cout << "Current block size " << currentBlockSize << endl;
+    currentBlockSize += sizeof(Record);
     // Update blockRecords value to keep track
     auto find = blockRecords.find(currentBlock);
     if (find != blockRecords.end())
@@ -55,7 +62,7 @@ bool Storage::allocateRecord(Record record)
     }
     recordsStored++;
     // Move the cursor forward by the amount of memory allocated
-    databaseCursor = (blockAddress + sizeof(record));
+    databaseCursor = (blockAddress + sizeof(Record));
     return true;
 }
 
@@ -127,32 +134,8 @@ vector<Record> Storage::readAllRecords()
     vector<Record> records;
     for (int blockID = 0; blockID <= currentBlock; ++blockID)
     {
-
-        uchar *blockCursor = baseAddress + (blockID * blockSize); // starting memory address of the particular block
-        int numRecordsInBlock = recordsInBlock(blockID);
-        if (numRecordsInBlock == 0)
-        {
-            break;
-        }
-
-        for (int i = 0; i < numRecordsInBlock; ++i)
-        {
-            int offset = i * sizeof(Record);
-            // TODO Make changes here and in the main function
-            Record record(
-                *reinterpret_cast<float *>(blockCursor + offset),     // fgPct
-                *reinterpret_cast<int *>(blockCursor + offset + 4),     // ftPct
-                *reinterpret_cast<uint8_t *>(blockCursor + offset + 8), // fg3Pct
-                *reinterpret_cast<uint8_t *>(blockCursor + offset + 12), // gameDate
-                *reinterpret_cast<uint8_t *>(blockCursor + offset + 16), // recordID
-                *reinterpret_cast<uint8_t *>(blockCursor + offset + 18), // teamID
-                *reinterpret_cast<float *>(blockCursor + offset + 19),   // pts
-                *reinterpret_cast<float *>(blockCursor + offset + 20),  // ast
-                *reinterpret_cast<float *>(blockCursor + offset + 21),  // reb
-                *reinterpret_cast<bool *>(blockCursor + offset + 22)    // homeTeamWins
-            );
-            records.push_back(record);
-        }
+        vector<Record> blockRecords = readRecordsFromBlock(blockID);
+        records.insert(records.end(), blockRecords.begin(), blockRecords.end());
     }
     return records;
 }
@@ -172,21 +155,22 @@ vector<Record> Storage::readRecordsFromBlock(int blockID)
     {
         return records;
     }
-    for (int i = 0; i < numRecordsInBlock; ++i)
+    for (int i = 0; i < numRecordsInBlock; i++)
     {
         int offset = i * sizeof(Record);
-        Record record(
-             *reinterpret_cast<float *>(blockCursor + offset),     // fgPct
-                *reinterpret_cast<int *>(blockCursor + offset + 4),     // ftPct
-                *reinterpret_cast<uint8_t *>(blockCursor + offset + 8), // fg3Pct
-                *reinterpret_cast<uint8_t *>(blockCursor + offset + 12), // gameDate
-                *reinterpret_cast<uint8_t *>(blockCursor + offset + 16), // recordID
-                *reinterpret_cast<uint8_t *>(blockCursor + offset + 18), // teamID
-                *reinterpret_cast<float *>(blockCursor + offset + 19),   // pts
-                *reinterpret_cast<float *>(blockCursor + offset + 20),  // ast
-                *reinterpret_cast<float *>(blockCursor + offset + 21),  // reb
-                *reinterpret_cast<bool *>(blockCursor + offset + 22)    // homeTeamWins
-        );
+        float fgPct = *reinterpret_cast<float *>(blockCursor + offset + offsetof(Record, fgPct));
+        float ftPct = *reinterpret_cast<float *>(blockCursor + offset + offsetof(Record, ftPct));
+        float fg3Pct = *reinterpret_cast<float *>(blockCursor + offset + offsetof(Record, fg3Pct));
+        int gameDate = *reinterpret_cast<int *>(blockCursor + offset + offsetof(Record, gameDate));
+        uchar *blockAddress = *reinterpret_cast<uchar **>(blockCursor + offset + offsetof(Record, blockAddress));
+        int recordOffset = *reinterpret_cast<int *>(blockCursor + offset + offsetof(Record, offset));
+        unsigned short int recordID = *reinterpret_cast<unsigned short int *>(blockCursor + offset + offsetof(Record, recordID));
+        uint8_t teamID = *reinterpret_cast<uint8_t *>(blockCursor + offset + offsetof(Record, teamID));
+        uint8_t pts = *reinterpret_cast<uint8_t *>(blockCursor + offset + offsetof(Record, pts));
+        uint8_t ast = *reinterpret_cast<uint8_t *>(blockCursor + offset + offsetof(Record, ast));
+        uint8_t reb = *reinterpret_cast<uint8_t *>(blockCursor + offset + offsetof(Record, reb));
+        bool homeTeamWins = *reinterpret_cast<bool *>(blockCursor + offset + offsetof(Record, homeTeamWins));
+        Record record = Record(fgPct,ftPct,fg3Pct,gameDate,blockAddress,recordOffset,recordID,teamID,pts,ast,reb,homeTeamWins);
         records.push_back(record);
     }
     return records;
@@ -206,6 +190,11 @@ int Storage::recordsInBlock(int blockID)
         return find->second;
     }
     return 0;
+}
+
+uchar *Storage::getBlockAddress(int blockID)
+{
+    return (baseAddress + (blockID * blockSize));
 }
 
 // Getter functions for private class attributes
