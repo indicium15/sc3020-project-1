@@ -1,14 +1,7 @@
-<<<<<<< HEAD
-#include "bplustree.h";
-#include "storage.h";
-#include <iostream>;
-#include "types.h";
-=======
 #include "bplustree.h"
 #include "storage.h"
 #include <iostream>
 #include "types.h"
->>>>>>> main
 
 // Address::Address(Record record){
 //     this->blockAddress = record.blockAddress;
@@ -19,12 +12,6 @@
 //     this->blockAddress = 0;
 //     this->offset = 0;
 // }
-<<<<<<< HEAD
-
-Node::Node(int maxKeys, bool isLeaf){
-    this->keys = new float[maxKeys];
-    this->children = vector<vector<Address>>(maxKeys+1);
-=======
 using namespace std;
 
 Node::Node(int maxKeys, bool isLeaf)
@@ -36,30 +23,17 @@ Node::Node(int maxKeys, bool isLeaf)
         this->keys[i] = 0.0;
     }
     this->children = vector<vector<Address>>(maxKeys + 1);
->>>>>>> main
     this->isLeaf = isLeaf;
     this->numKeys = 0;
 }
 
-<<<<<<< HEAD
-BPlusTree::BPlusTree(){
-=======
 BPlusTree::BPlusTree()
 {
->>>>>>> main
     this->rootNode = nullptr;
     this->keysStored = 0;
     this->blockSize = 400;
     this->nodeSize = blockSize;
     this->nodesStored = 0;
-<<<<<<< HEAD
-    int calculatedCapacity, count = 0;
-    while(blockSize >= count + sizeof(Address) + sizeof(float)){
-        count += sizeof(Address) + sizeof(float);
-        calculatedCapacity++;
-    }
-    if(calculatedCapacity == 0){
-=======
     this->levels = 0;
     int calculatedCapacity = 0, count = 0;
     while ((count + sizeof(Address) + sizeof(float)) <= (nodeSize - 2 * sizeof(uint8_t) - sizeof(bool)))
@@ -69,24 +43,11 @@ BPlusTree::BPlusTree()
     }
     if (calculatedCapacity == 0)
     {
->>>>>>> main
         cerr << "Error: block size is too small" << endl;
     }
     this->maxKeys = calculatedCapacity;
 }
 
-<<<<<<< HEAD
-int BPlusTree::insert(float key, Address value){
-    //No root node exists, create one
-    if(rootNode == nullptr){
-        Node root = Node(this->maxKeys, true);
-        root.keys[0] = key;
-        root.numKeys = 1;
-        root.children[0][0] = value;
-        this->rootNode = &root;
-        this->nodesStored++;
-    }
-=======
 // void BPlusTree::displayTree(Node *node, int level){
 //     Node *cursor = node;
 //     while(!(cursor == nullptr)){
@@ -375,4 +336,3 @@ int BPlusTree::insert(float key, const vector<Address> &value)
 //     }
 // }
 
->>>>>>> main
