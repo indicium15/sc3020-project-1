@@ -73,6 +73,7 @@ class BPlusTree{
         int removeInternal(float key, Node* parent, Node* child);
         void redistributeLeafNodes(Node* node);
         void redistributeInternalNodes(Node* node);
+        void deleteNode(Node *node);
         void mergeLeafNodes(Node* node);
         void mergeInternalNodes(Node* node);
         void displayTree();

@@ -203,7 +203,7 @@ int BPlusTree::remove(float key)
 
 }
 
-int BPlusTree::removeInternal(float key, Node* parent, Node* child);
+int BPlusTree::removeInternal(float key, Node* parent, Node* child)
 {
     if (parent == nullptr)
     {
@@ -259,6 +259,7 @@ int BPlusTree::removeInternal(float key, Node* parent, Node* child);
             redistributeInternalNodes(parent);
             mergeInternalNodes(parent);
         }
+
 
         Node* childNode = static_cast<Node*>(parent->getChildren(index + 1)[0].blockAddress);
         int result = removeInternal(key, childNode, parent);
