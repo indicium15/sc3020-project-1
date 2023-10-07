@@ -26,6 +26,37 @@ Storage::Storage(uint diskCapacity, uint blockSize)
     this->recordsStored = 0;
 }
 
+bool Storage::deleteBlock(int blockID)
+{
+    uchar *cursor = baseAddress;
+    // Navigate to the first memory address of a block
+    cursor += (blockID * blockSize);
+    uchar zeroBytes[blockSize];              // Create an array of 400 null bytes
+    memset(zeroBytes, 0, sizeof(zeroBytes)); // Initialize it to zeros
+    if (memcpy(cursor, zeroBytes, sizeof(zeroBytes)))
+    {
+        this->recordsStored -= (currentBlockSize / sizeof(Record));
+        this->availableBlocks++;
+        return true; // Copy to the memory pointed by cursor
+    }
+    return false;
+}
+
+bool Storage::deleteRecord(int blockID, int offset)
+{
+    uchar *cursor = baseAddress;
+    cursor += (blockID * blockSize) + offset;
+    uchar zeroBytes[sizeof(Record)];         // Create an array of 400 null bytes
+    memset(zeroBytes, 0, sizeof(zeroBytes)); // Initialize it to zeros
+    if (memcpy(cursor, zeroBytes, sizeof(zeroBytes))){
+        this->recordsStored--;
+        //TODO: logic for checking if there is only one node left in the block
+        //TODO: logic for updating the blockRecords map
+        return true; // Copy to the memory pointed by cursor
+    }
+    return false;
+}
+
 /**
  * @brief Function that is used to store a record in the database object.
  *
@@ -74,7 +105,8 @@ bool Storage::allocateRecord(Record record)
  * @param recordSize size in bytes of the record to be allocated
  * @return uchar* memory pointer to the available space in the database
  */
-uchar *Storage::findAvailableBlock(int recordSize){
+uchar *Storage::findAvailableBlock(int recordSize)
+{
     // Error case: no blocks are available
     if (currentBlockSize + recordSize > blockSize && availableBlocks == 0)
     {
@@ -150,6 +182,8 @@ vector<Record> Storage::readAllRecords()
 vector<Record> Storage::readRecordsFromBlock(int blockID)
 {
     vector<Record> records;
+    uchar nullBytes[sizeof(Record)];
+    memset(nullBytes, 0, sizeof(Record));
     uchar *blockCursor = baseAddress + (blockID * blockSize); // starting memory address of the particular block
     int numRecordsInBlock = recordsInBlock(blockID);
     if (numRecordsInBlock == 0)
@@ -159,20 +193,27 @@ vector<Record> Storage::readRecordsFromBlock(int blockID)
     for (int i = 0; i < numRecordsInBlock; i++)
     {
         int offset = i * sizeof(Record);
-        float fgPct = *reinterpret_cast<float *>(blockCursor + offset + offsetof(Record, fgPct));
-        float ftPct = *reinterpret_cast<float *>(blockCursor + offset + offsetof(Record, ftPct));
-        float fg3Pct = *reinterpret_cast<float *>(blockCursor + offset + offsetof(Record, fg3Pct));
-        int gameDate = *reinterpret_cast<int *>(blockCursor + offset + offsetof(Record, gameDate));
-        uchar *blockAddress = *reinterpret_cast<uchar **>(blockCursor + offset + offsetof(Record, blockAddress));
-        int recordOffset = *reinterpret_cast<int *>(blockCursor + offset + offsetof(Record, offset));
-        unsigned short int recordID = *reinterpret_cast<unsigned short int *>(blockCursor + offset + offsetof(Record, recordID));
-        uint8_t teamID = *reinterpret_cast<uint8_t *>(blockCursor + offset + offsetof(Record, teamID));
-        uint8_t pts = *reinterpret_cast<uint8_t *>(blockCursor + offset + offsetof(Record, pts));
-        uint8_t ast = *reinterpret_cast<uint8_t *>(blockCursor + offset + offsetof(Record, ast));
-        uint8_t reb = *reinterpret_cast<uint8_t *>(blockCursor + offset + offsetof(Record, reb));
-        bool homeTeamWins = *reinterpret_cast<bool *>(blockCursor + offset + offsetof(Record, homeTeamWins));
-        Record record = Record(fgPct,ftPct,fg3Pct,gameDate,blockAddress,recordOffset,recordID,teamID,pts,ast,reb,homeTeamWins);
-        records.push_back(record);
+        if (memcmp(blockCursor + offset + sizeof(Record), nullBytes, sizeof(Record)) == 0)
+        {
+            continue;
+        }
+        else
+        {
+            float fgPct = *reinterpret_cast<float *>(blockCursor + offset + offsetof(Record, fgPct));
+            float ftPct = *reinterpret_cast<float *>(blockCursor + offset + offsetof(Record, ftPct));
+            float fg3Pct = *reinterpret_cast<float *>(blockCursor + offset + offsetof(Record, fg3Pct));
+            int gameDate = *reinterpret_cast<int *>(blockCursor + offset + offsetof(Record, gameDate));
+            uchar *blockAddress = *reinterpret_cast<uchar **>(blockCursor + offset + offsetof(Record, blockAddress));
+            int recordOffset = *reinterpret_cast<int *>(blockCursor + offset + offsetof(Record, offset));
+            unsigned short int recordID = *reinterpret_cast<unsigned short int *>(blockCursor + offset + offsetof(Record, recordID));
+            uint8_t teamID = *reinterpret_cast<uint8_t *>(blockCursor + offset + offsetof(Record, teamID));
+            uint8_t pts = *reinterpret_cast<uint8_t *>(blockCursor + offset + offsetof(Record, pts));
+            uint8_t ast = *reinterpret_cast<uint8_t *>(blockCursor + offset + offsetof(Record, ast));
+            uint8_t reb = *reinterpret_cast<uint8_t *>(blockCursor + offset + offsetof(Record, reb));
+            bool homeTeamWins = *reinterpret_cast<bool *>(blockCursor + offset + offsetof(Record, homeTeamWins));
+            Record record = Record(fgPct, ftPct, fg3Pct, gameDate, blockAddress, recordOffset, recordID, teamID, pts, ast, reb, homeTeamWins);
+            records.push_back(record);
+        }
     }
     return records;
 }
@@ -193,35 +234,54 @@ int Storage::recordsInBlock(int blockID)
     return 0;
 }
 
-vector<Record> Storage::readRecordsfromAddresses(vector<Address>addresses){
-    //Initialize a map to store the indexes we want to read for each blockID
+void Storage::setRecordsInBlock(int blockID, int value)
+{
+    auto find = blockRecords.find(blockID);
+    if (find != blockRecords.end())
+    {
+        find->second = value;
+    }
+    else
+    {
+        blockRecords[blockID] = value;
+    }
+}
+
+vector<Record> Storage::readRecordsfromAddresses(vector<Address> addresses)
+{
+    // Initialize a map to store the indexes we want to read for each blockID
     int blockAccessCount = 0;
     map<int, vector<int>> indexMap;
-    for(int i = 0; i < addresses.size(); i++){
+    for (int i = 0; i < addresses.size(); i++)
+    {
         int blockID = getBlockID(addresses[i].blockAddress);
         int index = addresses[i].offset / sizeof(Record);
-        if(indexMap.find(blockID) != indexMap.end()){
-            //Push index to existing vector if the key already exists
+        if (indexMap.find(blockID) != indexMap.end())
+        {
+            // Push index to existing vector if the key already exists
             indexMap[blockID].push_back(index);
         }
-        else{
-            //Create and push a vector with index value if the key does not exist 
+        else
+        {
+            // Create and push a vector with index value if the key does not exist
             indexMap[blockID] = vector<int>{index};
             // indexMap.insert(blockID, vector<int>{index});
         }
     }
-    //Value to return, vector of Records
+    // Value to return, vector of Records
     vector<Record> results;
-    //Iterate through all keys of hashmap (block ID we want to read)
-    for(const auto &pair: indexMap){
-        //Perform a unit reading of each block
+    // Iterate through all keys of hashmap (block ID we want to read)
+    for (const auto &pair : indexMap)
+    {
+        // Perform a unit reading of each block
         vector<Record> recordsFromBlock = readRecordsFromBlock(pair.first);
         blockAccessCount++;
-        //TODO: Make sure to write in the report how we're reading each block only once to optimise the "I/O operations"
-        //Get the indexes we want to read from each block
-        vector<int> indexes = pair.second; 
-        for(int index: indexes){
-            //Push each index into the results
+        // TODO: Make sure to write in the report how we're reading each block only once to optimise the "I/O operations"
+        // Get the indexes we want to read from each block
+        vector<int> indexes = pair.second;
+        for (int index : indexes)
+        {
+            // Push each index into the results
             results.push_back(recordsFromBlock.at(index));
         }
     }
@@ -229,53 +289,108 @@ vector<Record> Storage::readRecordsfromAddresses(vector<Address>addresses){
     return results;
 }
 
-//TODO: scope for optimization here - call a function for indexMap
+// TODO: scope for optimization here - call a function for indexMap
 
-vector<Record> Storage::readRecordsfromNestedAddresses(vector<vector<Address>> addresses){
-   int blockAccessCount = 0;
+vector<Record> Storage::readRecordsfromNestedAddresses(vector<vector<Address>> addresses)
+{
+    int blockAccessCount = 0;
     map<int, vector<int>> indexMap;
-    for(int i = 0; i < addresses.size(); i++){
+    for (int i = 0; i < addresses.size(); i++)
+    {
         vector<Address> cursor = addresses[i];
-        for(int j = 0; j < cursor.size(); j++){
+        for (int j = 0; j < cursor.size(); j++)
+        {
             int blockID = getBlockID(cursor[j].blockAddress);
             int index = cursor[j].offset / sizeof(Record);
-            if(indexMap.find(blockID) != indexMap.end()){
-                //Push index to existing vector if the key already exists
+            if (indexMap.find(blockID) != indexMap.end())
+            {
+                // Push index to existing vector if the key already exists
                 indexMap[blockID].push_back(index);
             }
-            else{
-                //Create and push a vector with index value if the key does not exist 
+            else
+            {
+                // Create and push a vector with index value if the key does not exist
                 indexMap[blockID] = vector<int>{index};
                 // indexMap.insert(blockID, vector<int>{index});
             }
         }
     }
-    //Value to return, vector of Records
+    // Value to return, vector of Records
     vector<Record> results;
-    //Iterate through all keys of hashmap (block ID we want to read)
-    for(const auto &pair: indexMap){
-        //Perform a unit reading of each block
+    // Iterate through all keys of hashmap (block ID we want to read)
+    for (const auto &pair : indexMap)
+    {
+        // Perform a unit reading of each block
         vector<Record> recordsFromBlock = readRecordsFromBlock(pair.first);
         blockAccessCount++;
-        //TODO: Make sure to write in the report how we're reading each block only once to optimise the "I/O operations"
-        //Get the indexes we want to read from each block
-        vector<int> indexes = pair.second; 
-        for(int index: indexes){
-            //Push each index into the results
+        // TODO: Make sure to write in the report how we're reading each block only once to optimise the "I/O operations"
+        // Get the indexes we want to read from each block
+        vector<int> indexes = pair.second;
+        for (int index : indexes)
+        {
+            // Push each index into the results
             results.push_back(recordsFromBlock.at(index));
         }
     }
     cout << "Number of Data Blocks Accessed: " << blockAccessCount << endl;
-    return results; 
+    return results;
 }
 
-uchar* Storage::getBlockAddress(int blockID)
+int Storage::removeRecordsfromNestedAddresses(vector<vector<Address>> addresses)
+{
+    int blockAccessCount = 0;
+    map<int, vector<int>> indexMap;
+    for (int i = 0; i < addresses.size(); i++)
+    {
+        vector<Address> cursor = addresses[i];
+        for (int j = 0; j < cursor.size(); j++)
+        {
+            int blockID = getBlockID(cursor[j].blockAddress);
+            int index = cursor[j].offset / sizeof(Record);
+            if (indexMap.find(blockID) != indexMap.end())
+            {
+                // Push index to existing vector if the key already exists
+                indexMap[blockID].push_back(index);
+            }
+            else
+            {
+                // Create and push a vector with index value if the key does not exist
+                indexMap[blockID] = vector<int>{index};
+                // indexMap.insert(blockID, vector<int>{index});
+            }
+        }
+    }
+    cout << "Printing blocks and indexes to be deleted" << endl;
+    for (const auto &pair : indexMap)
+    {
+        cout << "Block Number: " << pair.first << ", Indexes : ";
+        vector<int> indexes = pair.second;
+        // Check if the length is the full block, then just delete the whole block
+        if (indexes.size() == (blockSize / sizeof(Record)))
+        {
+            if (deleteBlock(pair.first))
+            {
+                cout << "Block ID " << pair.first << "sucessfully deleted" << endl;
+            }
+        }
+        for (int index : indexes)
+        {
+            // Push each index into the results
+            cout << index << " ";
+        }
+        cout << endl;
+    }
+    return 1;
+}
+
+uchar *Storage::getBlockAddress(int blockID)
 {
     return (baseAddress + (blockID * blockSize));
 }
 
-int Storage::getBlockID(void* blockAddress){
-    return(static_cast<uchar *>(blockAddress) - baseAddress) / blockSize;
+int Storage::getBlockID(void *blockAddress)
+{
+    return (static_cast<uchar *>(blockAddress) - baseAddress) / blockSize;
 }
 
 // Getter functions for private class attributes

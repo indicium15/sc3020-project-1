@@ -34,10 +34,12 @@ public:
     Storage(uint diskCapacity, uint blockSize);
     // Destructor
     ~Storage();
-    // Allocate memory to a block
-    bool allocateBlock();
+    // Delete contents of a block
+    bool deleteBlock(int blockID);
     // Allocate memory to a record
     bool allocateRecord(Record record);
+    // Delete a record from the database
+    bool deleteRecord(int blockID, int offset);
     // Function to find available block while allocating records
     uchar *findAvailableBlock(int size);
     // Function to read a block
@@ -49,6 +51,7 @@ public:
     vector<Record> readAllRecords();
     vector<Record> readRecordsfromAddresses(vector<Address> address);
     vector<Record> readRecordsfromNestedAddresses(vector<vector<Address>> address);
+    int removeRecordsfromNestedAddresses(vector<vector<Address>> address);
     // Return the number of records for a blockID by looking up the structure
     int recordsInBlock(int blockID);
     //Return the header memory address for a block ID
@@ -59,6 +62,8 @@ public:
     int getBlocksUsed();
     int getAvailableBlocks();
     int getBlockSize();
+    // Setter function for blockRecords
+    void setRecordsInBlock(int blockID, int value);
 };
 
 #endif

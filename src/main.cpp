@@ -283,7 +283,6 @@ int main()
     cout << "Linear Search for Records with FG_PCT 0.5" << endl;
     int linearSearchResultsLength = 0;
     int linearSearchDataBlocksAccessed = 0;
-    //TODO: Number of data blocks accessed by a brute force scan
     bool flag = false;
 
     auto experimentThreeLinearSeachStart = chrono::high_resolution_clock::now();
@@ -384,6 +383,10 @@ int main()
 
     tree.displayTree(tree.rootNode, 1);
 
+    //Using search query to get address vectors of all records that need to be removed from the disk
+    vector<vector<Address>> addressesToDelete = tree.searchRange(0,0.35);
+    //Call method to remove these addresses from the disk
+    // storage.removeRecordsfromNestedAddresses(addressesToDelete);
     // Restore the original std::cout buffer
     // // cout.rdbuf(coutBuffer);
     // // Close the output file

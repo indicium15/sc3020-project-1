@@ -556,6 +556,7 @@ int BPlusTree::deleteNode(float key)
     Node *cursor = this->rootNode;
     Node *parent;
     int leftSibling, rightSibling; // Index of the left and the right leaf node that we need to borrow from
+    //TODO: update numNodes
 
     // Finding the leaf node with the key to delete
     while (!cursor->getIsLeaf())
@@ -712,7 +713,8 @@ int BPlusTree::deleteNode(float key)
             // Shift right sibling's last pointer left by one
 
             rightNode->setChildren(cursor->getNumKeys(), rightNode->getChildren(cursor->getNumKeys() + 1));
-            rightNode->setChildren(cursor->getNumKeys() + 1, vector<Address>{Address{nullptr, 0}}); // TODO: check if this statement is right. delete TODO after check
+            // TODO: check if this statement is right. delete TODO after check
+            rightNode->setChildren(cursor->getNumKeys() + 1, vector<Address>{Address{nullptr, 0}}); 
 
             // Updating the parent node with the new key at the beginning of the right sibling
             parent->setKey(rightSibling - 1, rightNode->getKey(0));
@@ -724,6 +726,52 @@ int BPlusTree::deleteNode(float key)
 
             return 1;
         }
+    }
+
+    //Reaching this point means that we cannot borrow keys from the siblings
+    //In this case, we must merge nodes
+
+    //If current node has a left sibling, merge with it
+    if(leftSibling >= 0){
+        
+        //Left sibling
+        Node* leftNode = static_cast<Node *>(parent->getChild(leftSibling,0).blockAddress);
+
+        // Transfering all keys and pointers from current node to left sibling
+        for(int i = leftNode->getNumKeys(), j=0; j<cursor->getNumKeys(); i++, j++){
+            leftNode->setKey(i, cursor->getKey(j));
+            leftNode->setChildren(i, cursor->getChildren(j));
+        }
+
+        // Updating numKeys and making sure that the last pointer in the left node points to the node after the current node
+        leftNode->setNumKeys(leftNode->getNumKeys() + cursor->getNumKeys());
+        leftNode->setChildren(leftNode->getNumKeys(), cursor->getChildren(cursor->getNumKeys()));
+
+        this->nodesStored--; //TODO: check and see if this is the right place to reduce the number of nodes
+
+        //TODO: remove internal method call
+    }
+    // If merge with left sibling does not work, we try merging with the right sibling
+    else if(rightSibling <= parent->getNumKeys()){
+        // Right sibling
+        Node *rightNode = static_cast<Node *>(parent->getChild(rightSibling, 0).blockAddress);
+        
+        // Transfering all keys and pointers from right node to current node
+        for(int i = cursor->getNumKeys(), j = 0; j < rightNode->getNumKeys(); i++, j++){
+            cursor->setKey(i, rightNode->getKey(j));
+            cursor->setChildren(i, rightNode->getChildren(j));
+        }
+        
+        // Updating numkeys and making sure that the last pointer in the current node points to the node after the right node
+        cursor->setNumKeys(cursor->getNumKeys() + rightNode->getNumKeys());
+        cursor->setChildren(cursor->getNumKeys(), rightNode->getChildren(rightNode->getNumKeys()));
+
+        this->nodesStored--; //TODO: check and see if this is the right place to reduce the number of nodes
+
+        //TODO: remove internal method call
+
+
+
     }
 
     
