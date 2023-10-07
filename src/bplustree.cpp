@@ -550,7 +550,6 @@ int BPlusTree::deleteNode(float key){
             // If we cannot find, go to the last pointer in the node
             if(i == cursor->getNumKeys()-1){
                 leftSibling = i;
-                //TODO: do we need to update the right sibling here?
                 rightSibling = i+2;
                 cursor = static_cast<Node *>(cursor->getChild(i+1,0).blockAddress);
                 break;
@@ -607,8 +606,70 @@ int BPlusTree::deleteNode(float key){
         return 1;
     }
 
-    //TODO:line 182 of github: https://github.com/chenningg/cz4031-b-plus-tree/blob/master/src/b_plus_tree_remove.cpp
-    
-    
+    //If we don't have enough keys for a balanced tree, we try to take a key from the left sibling
+    if(leftSibling >= 0){
+        Node* leftNode = static_cast<Node *>(parent->getChild(leftSibling, 0).blockAddress);
 
+        //We check if leftNode has enough keys to lend one and still be a valid leaf node
+        if(leftNode->getNumKeys() >= minimumKeysForLeafNode+1){
+
+            //Shift the last pointer by one
+            cursor->setChildren(cursor->getNumKeys()+1, cursor->getChildren(cursor->getNumKeys()));
+
+            //Shift all the remaining keys and pointer back by one
+            for(int i = cursor->getNumKeys(); i>0; i--){
+                cursor->setKey(i, cursor->getKey(i-1));
+                cursor->setChildren(i, cursor->getChildren(i-1));
+            }
+
+            //Transfer the borrowed key from leftNode to current Node
+            cursor->setKey(0, leftNode->getKey(leftNode->getNumKeys()-1));
+            cursor->setChildren(0, leftNode->getChildren(leftNode->getNumKeys()-1));
+            cursor->setNumKeys(cursor->getNumKeys()+1); // to account for the increase in key
+            leftNode->setNumKeys(leftNode->getNumKeys()-1); // to account for the decrease in key
+            
+            //Move the last pointer in the left node back by one to account for the deletion
+            leftNode->setChildren(cursor->getNumKeys(), cursor->getChildren(cursor->getNumKeys()+1));
+            leftNode->setChildren(cursor->getNumKeys()+1, vector<Address>{Address{nullptr, 0}}); //TODO: check if this statement is right. delete TODO after check
+
+            //Updating parent with the new key at the beginning of current node
+            parent->setKey(leftSibling, cursor->getKey(0));
+
+            return 1;
+        }
+    }
+
+    //If we can't take a key from left sibling, we check the right sibling
+    if(rightSibling <= parent->getNumKeys()){
+        Node *rightNode = static_cast<Node *>(parent->getChild(rightSibling, 0).blockAddress);
+            
+        //We check if rightNode has enough keys to lend one and still be a valid leaf node
+        if(rightNode->getNumKeys() >= minimumKeysForLeafNode+1){
+
+            //Shifting the last pointer by one to make space to add new key and pointer
+            cursor->setChildren(cursor->getNumKeys()+1, cursor->getChildren(cursor->getNumKeys()));
+
+            //Transfer borrowed key and pointer
+            cursor->setKey(cursor->getNumKeys(), rightNode->getKey(0));
+            cursor->setChildren(cursor->getNumKeys(), rightNode->getChildren(0));
+            cursor->setNumKeys(cursor->getNumKeys()+1);
+            rightNode->setNumKeys(rightNode->getNumKeys()-1);
+
+            //Shift all the keys and pointers in rightNode left by one
+            for(int i=0;i<rightNode->getNumKeys(); i++){
+                rightNode->setKey(i, rightNode->getKey(i+1));
+                rightNode->setChildren(i, rightNode->getChildren(i+1));
+            }
+
+            //TODO: Explain the logic behind using cursor->numKey and not rightNode->numKey+1
+            //Shift right sibling's last pointer left by one
+            rightNode->setChildren(cursor->getNumKeys(), rightNode->getChildren(cursor->getNumKeys()+1));
+            rightNode->setChildren(cursor->getNumKeys()+1, vector<Address>{Address{nullptr,0}}); //TODO: check if this statement is right. delete TODO after check
+            
+            //Updating the parent node with the new key at the beginning of the right sibling
+            parent->setKey(rightSibling-1, rightNode->getKey(0));
+
+            return 1;
+        }
+    }
 }

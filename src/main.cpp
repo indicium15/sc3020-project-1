@@ -281,6 +281,8 @@ int main()
     int linearSearchDataBlocksAccessed = 0;
     //TODO: Number of data blocks accessed by a brute force scan
     bool flag = false;
+
+    auto experimentThreeLinearSeachStart = chrono::high_resolution_clock::now();
     for(int i = 0; i<storage.getBlocksUsed(); i++){
         linearSearchDataBlocksAccessed++;
         vector<Record>recordsInBlock = storage.readRecordsFromBlock(i);
@@ -297,16 +299,19 @@ int main()
             break;
         }
     }
+    auto experimentThreeLinearSeachEnd = chrono::high_resolution_clock::now();
+    chrono::nanoseconds experimentThreeLinearSearchRuntime = chrono::duration_cast<chrono::nanoseconds>(experimentThreeLinearSeachEnd - experimentThreeLinearSeachStart);
     //Finding average of fg3pct of Record
     float sum = 0.0f;
     for(Record record: resultRecords){
         sum+=record.fg3Pct;
     }
-    float average = sum / static_cast<float>(resultRecords.size());
-    cout << "Average of FG3_PCT_HOME for Records Returned: " << average << endl;
+    float experimentThreeAverage = sum / static_cast<float>(resultRecords.size());
+    cout << "Average of FG3_PCT_HOME for Records Returned: " << experimentThreeAverage << endl;
     cout << "Number of Records with FG_PCT 0.5 with Linear Search: " << linearSearchResultsLength << endl;
     cout << "Number of Data Blocks accessed for query with Linear Search: " << linearSearchDataBlocksAccessed << endl;
     cout << "Runtime of Search and Retrieval: " << experimentThreeRuntime.count() << " nanoseconds" << endl;
+    cout << "Runtime of Linear Search of Data Blocks: " << experimentThreeLinearSearchRuntime.count() << " nanoseconds" << endl;
     
     //Experiment 4
     cout << "------------------------------------------" << endl;
@@ -324,6 +329,8 @@ int main()
     cout << "Number of Records (Record Structure) with FG_PCT between 0.6 and 1 (inclusive): " << rangedResultsRecords.size() << endl;
     int rangedLinearSeachResultsLength = 0;
     int rangedLinearSearchDataBlocksAccessed = 0;
+    
+    auto experimentFourLinearSeachStart = chrono::high_resolution_clock::now();
     for(int i = 0; i<storage.getBlocksUsed(); i++){
         rangedLinearSearchDataBlocksAccessed++;
         vector<Record>recordsInBlock = storage.readRecordsFromBlock(i);
@@ -333,10 +340,26 @@ int main()
             }
         }
     }
+    auto experimentFourLinearSeachEnd = chrono::high_resolution_clock::now();
+    chrono::nanoseconds experimentFourLinearSearchRuntime = chrono::duration_cast<chrono::nanoseconds>(experimentFourLinearSeachEnd - experimentFourLinearSeachStart);
+    sum = 0.0f;
+    for(Record record: rangedResultsRecords){
+        sum+=record.fg3Pct;
+    } 
+    float experimentFourAverage = sum / static_cast<float>(rangedResultsRecords.size());
+    cout << "Average of FG3_PCT_HOME for Records Returned: " << experimentFourAverage << endl;
     cout << "Number of Records with FG_PCT between 0.6 and 1 (inclusive) with Linear Search: " << rangedLinearSeachResultsLength << endl;
     cout << "Number of Data Blocks accessed for ranged query with Linear Search: " << rangedLinearSearchDataBlocksAccessed << endl;
     cout << "Runtime of Search and Retrieval: " << experimentFourRuntime.count() << " nanoseconds" << endl; 
+    cout << "Runtime of Linear Search of Data Blocks: " << experimentFourLinearSearchRuntime.count() << " nanoseconds" << endl;
     
+
+    //Experiment 5
+    cout << "------------------------------------------" << endl;
+    cout << "Experiment 5" << endl;
+    // tree.deleteNode(0.5);
+    // tree.displayTree(tree.rootNode, 1);
+
     // Restore the original std::cout buffer
     cout.rdbuf(coutBuffer);
     // Close the output file
