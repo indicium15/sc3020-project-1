@@ -20,7 +20,7 @@ Node::Node(int maxKeys, bool isLeaf)
     this->numKeys = 0;
 }
 
-BPlusTree::BPlusTree()
+BPlusTree::BPlusTree(int numberOfRecords)
 {
     this->rootNode = nullptr;
     this->keysStored = 0;
@@ -37,6 +37,10 @@ BPlusTree::BPlusTree()
     if (calculatedCapacity == 0)
     {
         cerr << "Error: block size is too small" << endl;
+    }
+    while ((numberOfRecords % calculatedCapacity) < ((calculatedCapacity + 1) / 2))
+    {
+        calculatedCapacity--;
     }
     this->maxKeys = calculatedCapacity;
 }
@@ -88,7 +92,7 @@ void BPlusTree::displayTree(Node *cursor, int level)
             cout << "   ";
         }
         cout << " level " << level << ": ";
-        //cout << " Node Address: " << cursor << ": ";
+        // cout << " Node Address: " << cursor << ": ";
         displayNode(cursor);
     }
     if (cursor->getIsLeaf() != true)
@@ -441,91 +445,111 @@ Node *BPlusTree::findParent(Node *rootNode, Node *childNode, float lowerBoundKey
     return nullptr;
 }
 
-vector<Address> BPlusTree::searchKey(float key){
-    if(this->rootNode == nullptr){
-        //Error case: tree is empty
+vector<Address> BPlusTree::searchKey(float key)
+{
+    if (this->rootNode == nullptr)
+    {
+        // Error case: tree is empty
         cerr << "Tree is empty" << endl;
     }
-    Node* cursor = this->rootNode;
+    Node *cursor = this->rootNode;
     int indexNodesAccessed = 1; // Tracking the total number of index nodes accessed
     displayNode(cursor);
-    while(!cursor->getIsLeaf()){
-        for(int i = 0; i < cursor->getNumKeys(); i++){
+    while (!cursor->getIsLeaf())
+    {
+        for (int i = 0; i < cursor->getNumKeys(); i++)
+        {
             // Find the key in the current node
-            if(key < cursor->getKey(i)){
-                cursor = static_cast<Node *>(cursor->getChild(i,0).blockAddress);
+            if (key < cursor->getKey(i))
+            {
+                cursor = static_cast<Node *>(cursor->getChild(i, 0).blockAddress);
                 displayNode(cursor);
                 indexNodesAccessed++;
                 break;
             }
-            //If we cannot find in any of the current keys, go to the last pointer
-            if(i == cursor->getNumKeys()-1){
-                cursor = static_cast<Node *>(cursor->getChild(i+1,0).blockAddress);
+            // If we cannot find in any of the current keys, go to the last pointer
+            if (i == cursor->getNumKeys() - 1)
+            {
+                cursor = static_cast<Node *>(cursor->getChild(i + 1, 0).blockAddress);
                 displayNode(cursor);
                 indexNodesAccessed++;
                 break;
             }
         }
     }
-    //Found a leaf node,traverse through it to find the key
-    for(int i = 0; i<cursor->getNumKeys(); i++){
-        if(cursor->getKey(i) == key){
-            cout << "Number of index nodes accessed: " << indexNodesAccessed << endl;
+    // Found a leaf node,traverse through it to find the key
+    for (int i = 0; i < cursor->getNumKeys(); i++)
+    {
+        if (cursor->getKey(i) == key)
+        {
+            cout << ": " << indexNodesAccessed << endl;
             return cursor->getChildren(i);
         }
     }
     return vector<Address>{};
 }
 
-vector<vector<Address>> BPlusTree::searchRange(float low, float high){
-    if(this->rootNode == nullptr){
-        //Error case: tree is empty
+vector<vector<Address>> BPlusTree::searchRange(float low, float high)
+{
+    if (this->rootNode == nullptr)
+    {
+        // Error case: tree is empty
         cerr << "Tree is empty" << endl;
     }
     vector<vector<Address>> results;
-    Node* cursor = this->rootNode;
+    Node *cursor = this->rootNode;
     int indexNodesAccessed = 1; // Tracking the total number of index nodes accessed
     displayNode(cursor);
-    while(!cursor->getIsLeaf()){
-        for(int i = 0; i < cursor->getNumKeys(); i++){
+    while (!cursor->getIsLeaf())
+    {
+        for (int i = 0; i < cursor->getNumKeys(); i++)
+        {
             // Find the key in the current node
-            if(low < cursor->getKey(i)){
-                cursor = static_cast<Node *>(cursor->getChild(i,0).blockAddress);
+            if (low < cursor->getKey(i))
+            {
+                cursor = static_cast<Node *>(cursor->getChild(i, 0).blockAddress);
                 displayNode(cursor);
                 indexNodesAccessed++;
                 break;
             }
-            //If we cannot find in any of the current keys, go to the last pointer
-            if(i == cursor->getNumKeys()-1){
-                cursor = static_cast<Node *>(cursor->getChild(i+1,0).blockAddress);
+            // If we cannot find in any of the current keys, go to the last pointer
+            if (i == cursor->getNumKeys() - 1)
+            {
+                cursor = static_cast<Node *>(cursor->getChild(i + 1, 0).blockAddress);
                 displayNode(cursor);
                 indexNodesAccessed++;
                 break;
             }
         }
     }
-    //Found a leaf node,traverse through it to find the range
+    // Found a leaf node,traverse through it to find the range
     bool flag = false;
-    Node* temp;
-    while(cursor!=nullptr && flag!=true){
-        for(int i = 0; i<cursor->getNumKeys(); i++){
-            if(low <= cursor->getKey(i) && cursor->getKey(i) <= high){
+    Node *temp;
+    while (cursor != nullptr && flag != true)
+    {
+        for (int i = 0; i < cursor->getNumKeys(); i++)
+        {
+            if (low <= cursor->getKey(i) && cursor->getKey(i) <= high)
+            {
                 results.push_back(cursor->getChildren(i));
             }
-            if(cursor->getKey(i)>high){
+            if (cursor->getKey(i) > high)
+            {
                 flag = true;
             }
         }
         temp = static_cast<Node *>(cursor->getChild(cursor->getNumKeys(), 0).blockAddress);
         cursor = temp;
     }
-    cout << "Number of index nodes accessed: " << indexNodesAccessed << endl;
+    cout << "Number of Index Nodes accessed: " << indexNodesAccessed << endl;
     return results;
 }
 
-int BPlusTree::deleteNode(float key){
+int BPlusTree::deleteNode(float key)
+{
     // Check if tree is empty
-    if(this->rootNode == nullptr){
+    if (this->rootNode == nullptr)
+    {
         cerr << "Tree is empty" << endl;
     }
     const int minimumKeysForLeafNode = (maxKeys + 1) / 2;
@@ -534,24 +558,28 @@ int BPlusTree::deleteNode(float key){
     int leftSibling, rightSibling; // Index of the left and the right leaf node that we need to borrow from
 
     // Finding the leaf node with the key to delete
-    while(!cursor->getIsLeaf()){
+    while (!cursor->getIsLeaf())
+    {
         parent = cursor;
-        
+
         // Look for all the keys in the current node
-        for(int i=0;i<cursor->getNumKeys();i++){
-            leftSibling = i-1;
-            rightSibling = i+1;
-            
+        for (int i = 0; i < cursor->getNumKeys(); i++)
+        {
+            leftSibling = i - 1;
+            rightSibling = i + 1;
+
             // Find the key that we have to delete
-            if(key < cursor->getKey(i)){
-                cursor = static_cast<Node *>(cursor->getChild(i,0).blockAddress);
+            if (key < cursor->getKey(i))
+            {
+                cursor = static_cast<Node *>(cursor->getChild(i, 0).blockAddress);
                 break;
             }
             // If we cannot find, go to the last pointer in the node
-            if(i == cursor->getNumKeys()-1){
+            if (i == cursor->getNumKeys() - 1)
+            {
                 leftSibling = i;
-                rightSibling = i+2;
-                cursor = static_cast<Node *>(cursor->getChild(i+1,0).blockAddress);
+                rightSibling = i + 2;
+                cursor = static_cast<Node *>(cursor->getChild(i + 1, 0).blockAddress);
                 break;
             }
         }
@@ -563,113 +591,140 @@ int BPlusTree::deleteNode(float key){
     int indexToBeDeleted;
 
     // Traversing the leaf node to find the index of the specified key
-    for(int i = 0; i < cursor->getNumKeys(); i++){
-        if(cursor->getKey(i) == key){
+    for (int i = 0; i < cursor->getNumKeys(); i++)
+    {
+        if (cursor->getKey(i) == key)
+        {
             found = true;
             indexToBeDeleted = i;
             break;
         }
     }
 
-    if(found == false){
-        cout << "Can't find the key in the tree!" << endl;
+    if (found == false)
+    {
+        cerr << "Can't find the key in the tree!" << endl;
     }
 
     // Removing the specified key and its pointer in the memory from the node
     for (int i = indexToBeDeleted; i < cursor->getNumKeys(); i++)
     {
-        cursor->setKey(i, cursor->getKey(i+1));
-        cursor->setChildren(i, cursor->getChildren(i+1));
+        cursor->setKey(i, cursor->getKey(i + 1));
+        cursor->setChildren(i, cursor->getChildren(i + 1));
     }
     // Decrement number of keys stored in the current node
-    cursor->setNumKeys(cursor->getNumKeys()-1);
+    cursor->setNumKeys(cursor->getNumKeys() - 1);
     // Manually set the last node since it is not covered by for loop range
-    cursor->setChildren(cursor->getNumKeys(), cursor->getChildren(cursor->getNumKeys()+1));
+    cursor->setChildren(cursor->getNumKeys(), cursor->getChildren(cursor->getNumKeys() + 1));
 
-    for(int i=cursor->getNumKeys()+1; i < maxKeys+1; i++){
+    for (int i = cursor->getNumKeys() + 1; i < maxKeys + 1; i++)
+    {
         cursor->setChildren(i, vector<Address>{Address{nullptr, 0}});
     }
-    
-    //Deleting a key from the root
-    if(cursor == this->rootNode){
-        if(cursor->getNumKeys() == 0){
+
+    // Deleting a key from the root
+    if (cursor == this->rootNode)
+    {
+        if (cursor->getNumKeys() == 0)
+        {
             cout << "Entire index has been deleted" << endl;
             rootNode = nullptr;
         }
         cout << "Successfully deleted " << key << endl;
         return 1;
     }
-    
-    //If we do not need to borrow from other nodes, end function
-    if(cursor->getNumKeys() >= minimumKeysForLeafNode){
+
+    // If we do not need to borrow from other nodes, end function
+    if (cursor->getNumKeys() >= minimumKeysForLeafNode)
+    {
         cout << "Successfully deleted " << key << endl;
         return 1;
     }
 
-    //If we don't have enough keys for a balanced tree, we try to take a key from the left sibling
-    if(leftSibling >= 0){
-        Node* leftNode = static_cast<Node *>(parent->getChild(leftSibling, 0).blockAddress);
+    // If we don't have enough keys for a balanced tree, we try to take a key from the left sibling
+    if (leftSibling >= 0)
+    {
+        Node *leftNode = static_cast<Node *>(parent->getChild(leftSibling, 0).blockAddress);
 
-        //We check if leftNode has enough keys to lend one and still be a valid leaf node
-        if(leftNode->getNumKeys() >= minimumKeysForLeafNode+1){
+        // We check if leftNode has enough keys to lend one and still be a valid leaf node
+        if (leftNode->getNumKeys() >= minimumKeysForLeafNode + 1)
+        {
 
-            //Shift the last pointer by one
-            cursor->setChildren(cursor->getNumKeys()+1, cursor->getChildren(cursor->getNumKeys()));
+            // Shift the last pointer by one
+            cursor->setChildren(cursor->getNumKeys() + 1, cursor->getChildren(cursor->getNumKeys()));
 
-            //Shift all the remaining keys and pointer back by one
-            for(int i = cursor->getNumKeys(); i>0; i--){
-                cursor->setKey(i, cursor->getKey(i-1));
-                cursor->setChildren(i, cursor->getChildren(i-1));
+            // Shift all the remaining keys and pointer back by one
+            for (int i = cursor->getNumKeys(); i > 0; i--)
+            {
+                cursor->setKey(i, cursor->getKey(i - 1));
+                cursor->setChildren(i, cursor->getChildren(i - 1));
             }
 
-            //Transfer the borrowed key from leftNode to current Node
-            cursor->setKey(0, leftNode->getKey(leftNode->getNumKeys()-1));
-            cursor->setChildren(0, leftNode->getChildren(leftNode->getNumKeys()-1));
-            cursor->setNumKeys(cursor->getNumKeys()+1); // to account for the increase in key
-            leftNode->setNumKeys(leftNode->getNumKeys()-1); // to account for the decrease in key
-            
-            //Move the last pointer in the left node back by one to account for the deletion
-            leftNode->setChildren(cursor->getNumKeys(), cursor->getChildren(cursor->getNumKeys()+1));
-            leftNode->setChildren(cursor->getNumKeys()+1, vector<Address>{Address{nullptr, 0}}); //TODO: check if this statement is right. delete TODO after check
+            // Transfer the borrowed key from leftNode to current Node
+            cursor->setKey(0, leftNode->getKey(leftNode->getNumKeys() - 1));
+            cursor->setChildren(0, leftNode->getChildren(leftNode->getNumKeys() - 1));
+            cursor->setNumKeys(cursor->getNumKeys() + 1);     // to account for the increase in key
+            leftNode->setNumKeys(leftNode->getNumKeys() - 1); // to account for the decrease in key
 
-            //Updating parent with the new key at the beginning of current node
+            // Move the last pointer in the left node back by one to account for the deletion
+            leftNode->setChildren(cursor->getNumKeys(), cursor->getChildren(cursor->getNumKeys() + 1));
+            leftNode->setChildren(cursor->getNumKeys() + 1, vector<Address>{Address{nullptr, 0}});
+
+            // Updating parent with the new key at the beginning of current node
             parent->setKey(leftSibling, cursor->getKey(0));
 
-            return 1;
-        }
-    }
-
-    //If we can't take a key from left sibling, we check the right sibling
-    if(rightSibling <= parent->getNumKeys()){
-        Node *rightNode = static_cast<Node *>(parent->getChild(rightSibling, 0).blockAddress);
-            
-        //We check if rightNode has enough keys to lend one and still be a valid leaf node
-        if(rightNode->getNumKeys() >= minimumKeysForLeafNode+1){
-
-            //Shifting the last pointer by one to make space to add new key and pointer
-            cursor->setChildren(cursor->getNumKeys()+1, cursor->getChildren(cursor->getNumKeys()));
-
-            //Transfer borrowed key and pointer
-            cursor->setKey(cursor->getNumKeys(), rightNode->getKey(0));
-            cursor->setChildren(cursor->getNumKeys(), rightNode->getChildren(0));
-            cursor->setNumKeys(cursor->getNumKeys()+1);
-            rightNode->setNumKeys(rightNode->getNumKeys()-1);
-
-            //Shift all the keys and pointers in rightNode left by one
-            for(int i=0;i<rightNode->getNumKeys(); i++){
-                rightNode->setKey(i, rightNode->getKey(i+1));
-                rightNode->setChildren(i, rightNode->getChildren(i+1));
+            if (cursor->getNumKeys() >= minimumKeysForLeafNode)
+            {
+                cout << "Successfully deleted " << key << endl;
             }
 
-            //TODO: Explain the logic behind using cursor->numKey and not rightNode->numKey+1
-            //Shift right sibling's last pointer left by one
-            rightNode->setChildren(cursor->getNumKeys(), rightNode->getChildren(cursor->getNumKeys()+1));
-            rightNode->setChildren(cursor->getNumKeys()+1, vector<Address>{Address{nullptr,0}}); //TODO: check if this statement is right. delete TODO after check
-            
-            //Updating the parent node with the new key at the beginning of the right sibling
-            parent->setKey(rightSibling-1, rightNode->getKey(0));
+            return 1;
+        }
+    }
+
+    // If we can't take a key from left sibling, we check the right sibling
+    if (rightSibling <= parent->getNumKeys())
+    {
+        Node *rightNode = static_cast<Node *>(parent->getChild(rightSibling, 0).blockAddress);
+
+        // We check if rightNode has enough keys to lend one and still be a valid leaf node
+        if (rightNode->getNumKeys() >= minimumKeysForLeafNode + 1)
+        {
+
+            // Shifting the last pointer by one to make space to add new key and pointer
+            // Ensure that the last pointer still points to the right sibling
+            cursor->setChildren(cursor->getNumKeys() + 1, cursor->getChildren(cursor->getNumKeys()));
+
+            // Transfer borrowed key and pointer
+            cursor->setKey(cursor->getNumKeys(), rightNode->getKey(0));
+            cursor->setChildren(cursor->getNumKeys(), rightNode->getChildren(0));
+            cursor->setNumKeys(cursor->getNumKeys() + 1);
+            rightNode->setNumKeys(rightNode->getNumKeys() - 1);
+
+            // Shift all the keys and pointers in rightNode left by one
+            for (int i = 0; i < rightNode->getNumKeys(); i++)
+            {
+                rightNode->setKey(i, rightNode->getKey(i + 1));
+                rightNode->setChildren(i, rightNode->getChildren(i + 1));
+            }
+
+            // TODO: Explain the logic behind using cursor->numKey and not rightNode->numKey+1
+            // Shift right sibling's last pointer left by one
+
+            rightNode->setChildren(cursor->getNumKeys(), rightNode->getChildren(cursor->getNumKeys() + 1));
+            rightNode->setChildren(cursor->getNumKeys() + 1, vector<Address>{Address{nullptr, 0}}); // TODO: check if this statement is right. delete TODO after check
+
+            // Updating the parent node with the new key at the beginning of the right sibling
+            parent->setKey(rightSibling - 1, rightNode->getKey(0));
+
+            if (cursor->getNumKeys() >= minimumKeysForLeafNode)
+            {
+                cout << "Successfully deleted " << key << endl;
+            }
 
             return 1;
         }
     }
+
+    
 }

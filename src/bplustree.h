@@ -86,7 +86,7 @@ class BPlusTree{
         Node* findParent(Node* rootNode, Node* childNode, float lowerBoundKey);
         vector<Address> searchKey(float key);
         vector<vector<Address>> searchRange(float lowerKey, float upperKey);
-        BPlusTree();
+        BPlusTree(int numberOfRecords);
         ~BPlusTree();
 };
 

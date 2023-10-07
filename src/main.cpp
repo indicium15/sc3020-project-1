@@ -47,14 +47,14 @@ bool compareRecords(const Record &a, const Record &b)
 int main()
 {
     
-    string outputFileName = "output.txt";
-    ofstream outputFile(outputFileName);
-    if (!outputFile.is_open()) {
-        cerr << "Failed to open the file for writing: " << outputFileName << endl;
-        return 1; // Exit with an error code
-    }
-    streambuf* coutBuffer = cout.rdbuf();
-    cout.rdbuf(outputFile.rdbuf());
+    // // string outputFileName = "output.txt";
+    // // ofstream outputFile(outputFileName);
+    // // if (!outputFile.is_open()) {
+    // //     cerr << "Failed to open the file for writing: " << outputFileName << endl;
+    // //     return 1; // Exit with an error code
+    // // }
+    // // streambuf* coutBuffer = cout.rdbuf();
+    // // cout.rdbuf(outputFile.rdbuf());
 
     vector<Record> records;
     map<float, vector<Address>> recordMap;
@@ -235,7 +235,7 @@ int main()
     cout << "------------------------------------------" << endl;
     cout << "Experiment 2 " << endl;
     // Initialize B+ Tree Object
-    BPlusTree tree = BPlusTree();
+    BPlusTree tree = BPlusTree(recordMap.size());
     cout << "Maximum Keys in a node: " << tree.maxKeys << endl;
     cout << "Map size: " << recordMap.size() << endl;
     int count = 0;
@@ -258,9 +258,13 @@ int main()
         cout << "Number of keys: " << tree.keysStored << endl;
         cout << "Number of levels: " << tree.levels << endl;
     }
-    cout << "Number of nodes: " << tree.nodesStored << endl;
-    cout << "Number of keys: " << tree.keysStored << endl;
-    cout << "Number of levels: " << tree.levels << endl;
+    cout << "Number of keys stored in B+ Tree: " << tree.keysStored << endl;
+    cout << "Parameter 'n' of B+ Tree: " << tree.maxKeys << endl;
+    cout << "Number of nodes of B+ Tree: " << tree.nodesStored << endl;
+    cout << "Number of levels of B+ Tree: " << tree.levels << endl;
+    cout << "Content of Root Node:" << endl;
+    tree.displayNode(tree.rootNode);
+    cout << "Content of Tree:" << endl;
     tree.displayTree(tree.rootNode,1);
     
     //Experiment 3
@@ -357,12 +361,32 @@ int main()
     //Experiment 5
     cout << "------------------------------------------" << endl;
     cout << "Experiment 5" << endl;
-    // tree.deleteNode(0.5);
-    // tree.displayTree(tree.rootNode, 1);
+    //Testing deleting and borrowing from left sibling
+    
+    // tree.deleteNode(0.671);
+    // tree.deleteNode(0.675);
+    // tree.deleteNode(0.684);
+    // tree.deleteNode(0.667);
+    // tree.deleteNode(0.662);
+    // tree.deleteNode(0.658);
+    
+    //Testing deleting and borrowing from right sibling
+    
+    // tree.deleteNode(0.289);
+    // tree.deleteNode(0.288);
+    // tree.deleteNode(0.286);
+    // tree.deleteNode(0.284);
+    // tree.deleteNode(0.283);
+    // tree.deleteNode(0.282);
+    // tree.deleteNode(0.279);
+    // tree.deleteNode(0.278);
+    // tree.deleteNode(0.277);
+
+    tree.displayTree(tree.rootNode, 1);
 
     // Restore the original std::cout buffer
-    cout.rdbuf(coutBuffer);
-    // Close the output file
-    outputFile.close();
+    // // cout.rdbuf(coutBuffer);
+    // // Close the output file
+    // // outputFile.close();
     return 1;
 }
