@@ -47,14 +47,16 @@ bool compareRecords(const Record &a, const Record &b)
 int main()
 {
     
-    // // string outputFileName = "output.txt";
-    // // ofstream outputFile(outputFileName);
-    // // if (!outputFile.is_open()) {
-    // //     cerr << "Failed to open the file for writing: " << outputFileName << endl;
-    // //     return 1; // Exit with an error code
-    // // }
-    // // streambuf* coutBuffer = cout.rdbuf();
-    // // cout.rdbuf(outputFile.rdbuf());
+    string outputFileName1 = "Output.txt";
+    string outputFileName2 = "Experiments.txt";
+    ofstream outputFile1(outputFileName1);
+    ofstream outputFile2(outputFileName2);
+    if (!outputFile1.is_open() || !outputFile1.is_open()) {
+        cerr << "Failed to open or more files for writing " << endl;
+        return 1; // Exit with an error code
+    }
+    streambuf* coutBuffer = cout.rdbuf();
+    cout.rdbuf(outputFile1.rdbuf());
 
     vector<Record> records;
     map<float, vector<Address>> recordMap;
@@ -159,7 +161,7 @@ int main()
     cout << "ftPct: " << offsetof(Record, ftPct) << endl;
     cout << "fg3Pct: " << offsetof(Record, fg3Pct) << endl;
     cout << "gameDate: " << offsetof(Record, gameDate) << endl;
-    cout << "blockID: " << offsetof(Record, blockAddress) << endl;
+    cout << "blockAddress: " << offsetof(Record, blockAddress) << endl;
     cout << "offset: " << offsetof(Record, offset) << endl;
     cout << "recordID: " << offsetof(Record, recordID) << endl;
     cout << "teamID: " << offsetof(Record, teamID) << endl;
@@ -189,12 +191,14 @@ int main()
     // recordsRead = storage.readRecordsFromBlock(0);
     recordsRead = storage.readAllRecords();
     cout << "------------------------------------------" << endl;
+    cout.rdbuf(outputFile2.rdbuf());
     cout << "Experiment 1" << endl;
     int recordsStored = storage.getRecordsStored();
     cout << "Number of Records: " << recordsStored << endl;
-    cout << "Size of Record: " << sizeof(Record) << " bytes" << endl;
-    cout << "Number of Records Per Block : " << (storage.getBlockSize() / sizeof(Record)) << endl;
-    cout << "Number of Blocks: " << storage.getBlocksUsed() << endl;
+    cout << "Size of a Record: " << sizeof(Record) << " bytes" << endl;
+    cout << "Number of Records in a Block : " << (storage.getBlockSize() / sizeof(Record)) << endl;
+    cout << "Number of Blocks for Storing Data : " << storage.getBlocksUsed() << endl;
+    cout.rdbuf(outputFile1.rdbuf());
     cout << "Number of Records Stored Per Block: " << endl;
     storage.printBlockRecords();
     cout << "All records:" << endl;
@@ -237,7 +241,7 @@ int main()
     // Initialize B+ Tree Object
     BPlusTree tree = BPlusTree(recordMap.size());
     cout << "Maximum Keys in a node: " << tree.maxKeys << endl;
-    cout << "Map size: " << recordMap.size() << endl;
+    // cout << "Map size: " << recordMap.size() << endl;
     int count = 0;
     for (const auto &pair : recordMap)
     {
@@ -258,18 +262,22 @@ int main()
         cout << "Number of keys: " << tree.keysStored << endl;
         cout << "Number of levels: " << tree.levels << endl;
     }
-    cout << "Number of keys stored in B+ Tree: " << tree.keysStored << endl;
+    cout.rdbuf(outputFile2.rdbuf());
+    cout << "------------------------------------------" << endl;
+    cout << "Experiment 2 " << endl;
+    // cout << "Number of keys stored in B+ Tree: " << tree.keysStored << endl;
     cout << "Parameter 'n' of B+ Tree: " << tree.maxKeys << endl;
     cout << "Number of nodes of B+ Tree: " << tree.nodesStored << endl;
     cout << "Number of levels of B+ Tree: " << tree.levels << endl;
     cout << "Content of Root Node:" << endl;
     tree.displayNode(tree.rootNode);
+    
+    cout.rdbuf(outputFile1.rdbuf());
     cout << "Content of Tree:" << endl;
     tree.displayTree(tree.rootNode,1);
     
     //Experiment 3
-    //TODO: Write the average of Field Goal 3 percentage home
-    //TODO: Running time retrieval of b+ tree
+    cout.rdbuf(outputFile2.rdbuf());
     cout << "------------------------------------------" << endl;
     cout << "Experiment 3" << endl;
     auto experimentThreeStart = chrono::high_resolution_clock::now();
@@ -312,7 +320,7 @@ int main()
     float experimentThreeAverage = sum / static_cast<float>(resultRecords.size());
     cout << "Average of FG3_PCT_HOME for Records Returned: " << experimentThreeAverage << endl;
     cout << "Number of Records with FG_PCT 0.5 with Linear Search: " << linearSearchResultsLength << endl;
-    cout << "Number of Data Blocks accessed for query with Linear Search: " << linearSearchDataBlocksAccessed << endl;
+    cout << "Number of Data Blocks accessed for Query with Linear Search: " << linearSearchDataBlocksAccessed << endl;
     cout << "Runtime of Search and Retrieval: " << experimentThreeRuntime.count() << " nanoseconds" << endl;
     cout << "Runtime of Linear Search of Data Blocks: " << experimentThreeLinearSearchRuntime.count() << " nanoseconds" << endl;
     
@@ -328,8 +336,8 @@ int main()
     for(vector<Address> vector: rangedResults){
         rangedResultsSize += vector.size();
     }
-    cout << "Number of Records (Address Structure) with FG_PCT between 0.6 and 1 (inclusive): " << rangedResultsSize << endl;
-    cout << "Number of Records (Record Structure) with FG_PCT between 0.6 and 1 (inclusive): " << rangedResultsRecords.size() << endl;
+    // cout << "Number of Records (Address Structure) with FG_PCT between 0.6 and 1 (inclusive): " << rangedResultsSize << endl;
+    // cout << "Number of Records (Record Structure) with FG_PCT between 0.6 and 1 (inclusive): " << rangedResultsRecords.size() << endl;
     int rangedLinearSeachResultsLength = 0;
     int rangedLinearSearchDataBlocksAccessed = 0;
     
@@ -352,73 +360,77 @@ int main()
     float experimentFourAverage = sum / static_cast<float>(rangedResultsRecords.size());
     cout << "Average of FG3_PCT_HOME for Records Returned: " << experimentFourAverage << endl;
     cout << "Number of Records with FG_PCT between 0.6 and 1 (inclusive) with Linear Search: " << rangedLinearSeachResultsLength << endl;
-    cout << "Number of Data Blocks accessed for ranged query with Linear Search: " << rangedLinearSearchDataBlocksAccessed << endl;
+    cout << "Number of Data Blocks accessed for Ranged Query with Linear Search: " << rangedLinearSearchDataBlocksAccessed << endl;
     cout << "Runtime of Search and Retrieval: " << experimentFourRuntime.count() << " nanoseconds" << endl; 
     cout << "Runtime of Linear Search of Data Blocks: " << experimentFourLinearSearchRuntime.count() << " nanoseconds" << endl;
     
-
+    cout.rdbuf(outputFile1.rdbuf());
     //Experiment 5
     cout << "------------------------------------------" << endl;
     cout << "Experiment 5" << endl;
-    //Testing deleting and borrowing from left sibling
     
-    // tree.deleteNode(0.671);
-    // tree.deleteNode(0.675);
-    // tree.deleteNode(0.684);
-    // tree.deleteNode(0.667);
-    // tree.deleteNode(0.662);
-    // tree.deleteNode(0.658);
-    
-    //Testing deleting and borrowing from right sibling
-    
-    // tree.deleteNode(0.289);
-    // tree.deleteNode(0.288);
-    // tree.deleteNode(0.286);
-    // tree.deleteNode(0.284);
-    // tree.deleteNode(0.283);
-    // tree.deleteNode(0.282);
-    // tree.deleteNode(0.279);
-    // tree.deleteNode(0.278);
-    // tree.deleteNode(0.277);
-
-    tree.displayTree(tree.rootNode, 1);
-
-    tree.deleteNode(0.3);
-    tree.deleteNode(0.299);
-    tree.deleteNode(0.298);
-    tree.deleteNode(0.297);
-    tree.deleteNode(0.296);
-    tree.deleteNode(0.295);
-    tree.deleteNode(0.294);
-    tree.deleteNode(0.293);
-    tree.deleteNode(0.292);
-    tree.deleteNode(0.291);
-    tree.deleteNode(0.29);
-    tree.deleteNode(0.289);
-    tree.deleteNode(0.288);
-    tree.deleteNode(0.286);
-    tree.deleteNode(0.284);
-    tree.deleteNode(0.283);
-    tree.deleteNode(0.282);
-    tree.deleteNode(0.279);
-    tree.deleteNode(0.278);
-    tree.deleteNode(0.277);
-    tree.deleteNode(0.275);
-    tree.deleteNode(0.274);
-    tree.deleteNode(0.269);
-    tree.deleteNode(0.266);
-    tree.deleteNode(0.257);
-    tree.deleteNode(0.25);
-    tree.deleteNode(0);
-
-    tree.displayTree(tree.rootNode, 1);
-    //Using search query to get address vectors of all records that need to be removed from the disk
-    // vector<vector<Address>> addressesToDelete = tree.searchRange(0,0.35);
+    // tree.displayTree(tree.rootNode, 1);
+    int deletionLinearSearchResultsLength = 0;
+    int deletionLinearSearchDataBlocksAccessed = 0;
+    auto experimentFiveLinearSearchStart = chrono::high_resolution_clock::now();
+    for(int i = 0; i<storage.getBlocksUsed(); i++){
+        deletionLinearSearchDataBlocksAccessed++;
+        vector<Record>recordsInBlock = storage.readRecordsFromBlock(i);
+        for(Record record: recordsInBlock){
+            if(record.fgPct <= 0.35){
+                deletionLinearSearchResultsLength++;
+            }
+            else{
+                break;
+            }
+        }
+    }
+    auto experimentFiveLinearSearchEnd = chrono::high_resolution_clock::now();
+    chrono::nanoseconds experimentFiveLinearSearchRuntime = chrono::duration_cast<chrono::nanoseconds>(experimentFiveLinearSearchEnd - experimentFiveLinearSearchStart);
+    //Measure start
+    auto experimentFiveBPlusTreeSearchStart = chrono::high_resolution_clock::now();
+    vector<vector<Address>> addressesToDelete = tree.searchRange(0,0.35);
+    auto experimentFiveBPlusTreeSearchEnd = chrono::high_resolution_clock::now();
+    chrono::nanoseconds experimentFiveBPlusTreeSearchRuntime = chrono::duration_cast<chrono::nanoseconds>(experimentFiveBPlusTreeSearchEnd - experimentFiveBPlusTreeSearchStart);
     //Call method to remove these addresses from the disk
-    // storage.removeRecordsfromNestedAddresses(addressesToDelete);
+    auto recordDeletionStart = chrono::high_resolution_clock::now();
+    storage.removeRecordsfromNestedAddresses(addressesToDelete);
+    auto recordDeletionEnd = chrono::high_resolution_clock::now();
+    chrono::nanoseconds recordDeletionRuntime = chrono::duration_cast<chrono::nanoseconds>(recordDeletionEnd - recordDeletionStart);
+    //Measure end
+    vector<Record> testDeletion = storage.readAllRecords();
+    for(Record test: testDeletion){
+        test.print();
+    }
+    // Tree Deletion
+    auto deletionStart = chrono::high_resolution_clock::now();
+    for(auto pair: recordMap){
+        if(pair.first <= 0.35){
+            // Measure the runtime for each individual insertion call
+            tree.deleteNode(pair.first);
+        }
+        else break;
+    }
+    auto deletionEnd = chrono::high_resolution_clock::now();
+    chrono::nanoseconds bPlusTreeDeletionRuntime = chrono::duration_cast<chrono::nanoseconds>(deletionEnd - deletionStart);
+    // tree.displayTree(tree.rootNode, 1);
+    //Using search query to get address vectors of all records that need to be removed from the disk
+    cout.rdbuf(outputFile2.rdbuf());
+    cout << "------------------------------------------" << endl;
+    cout << "Experiment 5" << endl;
+    cout << "Number of nodes of the updated B+ tree: " << tree.nodesStored << endl;
+    cout << "Number of levels of the updated B+ tree: " << tree.levels << endl;
+    cout << "Content of the Root Node: " << endl;
+    tree.displayNode(tree.rootNode);
+    cout << "Runtime of Linear Seach Query for Keys Between 0 and 0.35: " << experimentFiveLinearSearchRuntime.count() << " nanoseconds" << endl;
+    cout << "Number of Data Blocks Accessed for Linear Search: " << deletionLinearSearchDataBlocksAccessed << endl;
+    cout << "Runtime of B+ Tree Query for Keys Between 0 and 0.35: " << experimentFiveBPlusTreeSearchRuntime.count() << " nanoseconds" << endl;
+    cout << "Runtime of B+ Tree Deletion of Keys Between 0 and 0.35: " << bPlusTreeDeletionRuntime.count() << " nanoseconds" << endl;
+    cout << "Runtime of Database Record Deletion of Keys Between 0 and 0.35: " << recordDeletionRuntime.count() << " nanoseconds" << endl;
     // Restore the original std::cout buffer
-    // // cout.rdbuf(coutBuffer);
+    cout.rdbuf(coutBuffer);
     // // Close the output file
-    // // outputFile.close();
+    outputFile1.close();
+    outputFile2.close();
     return 1;
 }

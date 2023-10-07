@@ -1,0 +1,43 @@
+Experiment 1
+Number of Records: 26651
+Size of a Record: 40 bytes
+Number of Records in a Block : 10
+Number of Blocks for Storing Data : 2666
+------------------------------------------
+Experiment 2 
+Parameter 'n' of B+ Tree: 16
+Number of nodes of B+ Tree: 25
+Number of levels of B+ Tree: 3
+Content of Root Node:
+| 0.425 | x | x | x | x | x | x | x | x | x | x | x | x | x | x | x |
+------------------------------------------
+Experiment 3
+Index Nodes Accessed while Searching B+ Key: 3
+Number of Data Blocks Accessed for Reading Records from Database: 86
+Number of Records with FG_PCT 0.5: 848
+Linear Search for Records with FG_PCT 0.5
+Average of FG3_PCT_HOME for Records Returned: 0.391201
+Number of Records with FG_PCT 0.5 with Linear Search: 848
+Number of Data Blocks accessed for Query with Linear Search: 2060
+Runtime of Search and Retrieval: 806625 nanoseconds
+Runtime of Linear Search of Data Blocks: 7213208 nanoseconds
+------------------------------------------
+Experiment 4
+Number of Index Nodes Accessed in B+ Tree Search: 3
+Number of Data Blocks Accessed: 24
+Average of FG3_PCT_HOME for Records Returned: 0.502329
+Number of Records with FG_PCT between 0.6 and 1 (inclusive) with Linear Search: 237
+Number of Data Blocks accessed for Ranged Query with Linear Search: 2666
+Runtime of Search and Retrieval: 265625 nanoseconds
+Runtime of Linear Search of Data Blocks: 7313458 nanoseconds
+------------------------------------------
+Experiment 5
+Number of nodes of the updated B+ tree: 21
+Number of levels of the updated B+ tree: 3
+Content of the Root Node: 
+| 0.425 | x | x | x | x | x | x | x | x | x | x | x | x | x | x | x |
+Runtime of Linear Seach Query for Keys Between 0 and 0.35: 9275583 nanoseconds
+Number of Data Blocks Accessed for Linear Search: 2666
+Runtime of B+ Tree Query for Keys Between 0 and 0.35: 120208 nanoseconds
+Runtime of B+ Tree Deletion of Keys Between 0 and 0.35: 1005000 nanoseconds
+Runtime of Database Record Deletion of Keys Between 0 and 0.35: 2191625 nanoseconds

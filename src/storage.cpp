@@ -46,13 +46,18 @@ bool Storage::deleteRecord(int blockID, int offset)
 {
     uchar *cursor = baseAddress;
     cursor += (blockID * blockSize) + offset;
-    uchar zeroBytes[sizeof(Record)];         // Create an array of 400 null bytes
+    uchar zeroBytes[sizeof(Record)];         // Create an array of 40 null bytes
     memset(zeroBytes, 0, sizeof(zeroBytes)); // Initialize it to zeros
     if (memcpy(cursor, zeroBytes, sizeof(zeroBytes))){
+        // Decrement the tracker of number of records stored
         this->recordsStored--;
-        //TODO: logic for checking if there is only one node left in the block
-        //TODO: logic for updating the blockRecords map
-        return true; // Copy to the memory pointed by cursor
+        // If there is only one record on a block, increment the number of available blocks
+        if(this->recordsInBlock(blockID) == 1){
+            this->availableBlocks++;
+        }
+        // Update the blockRecords data structure 
+        this->setRecordsInBlock(blockID, this->recordsInBlock(blockID)-1);
+        return true; 
     }
     return false;
 }
@@ -276,7 +281,6 @@ vector<Record> Storage::readRecordsfromAddresses(vector<Address> addresses)
         // Perform a unit reading of each block
         vector<Record> recordsFromBlock = readRecordsFromBlock(pair.first);
         blockAccessCount++;
-        // TODO: Make sure to write in the report how we're reading each block only once to optimise the "I/O operations"
         // Get the indexes we want to read from each block
         vector<int> indexes = pair.second;
         for (int index : indexes)
@@ -285,11 +289,10 @@ vector<Record> Storage::readRecordsfromAddresses(vector<Address> addresses)
             results.push_back(recordsFromBlock.at(index));
         }
     }
-    cout << "Number of Data Blocks Accessed: " << blockAccessCount << endl;
+    cout << "Number of Data Blocks Accessed for Reading Records from Database: " << blockAccessCount << endl;
     return results;
 }
 
-// TODO: scope for optimization here - call a function for indexMap
 
 vector<Record> Storage::readRecordsfromNestedAddresses(vector<vector<Address>> addresses)
 {
@@ -323,7 +326,6 @@ vector<Record> Storage::readRecordsfromNestedAddresses(vector<vector<Address>> a
         // Perform a unit reading of each block
         vector<Record> recordsFromBlock = readRecordsFromBlock(pair.first);
         blockAccessCount++;
-        // TODO: Make sure to write in the report how we're reading each block only once to optimise the "I/O operations"
         // Get the indexes we want to read from each block
         vector<int> indexes = pair.second;
         for (int index : indexes)
@@ -368,7 +370,8 @@ int Storage::removeRecordsfromNestedAddresses(vector<vector<Address>> addresses)
         // Check if the length is the full block, then just delete the whole block
         if (indexes.size() == (blockSize / sizeof(Record)))
         {
-            if (deleteBlock(pair.first))
+            cout << "Trying to delete block" << endl;
+            if (deleteBlock(pair.first) == 1)
             {
                 cout << "Block ID " << pair.first << "sucessfully deleted" << endl;
             }
@@ -376,7 +379,9 @@ int Storage::removeRecordsfromNestedAddresses(vector<vector<Address>> addresses)
         for (int index : indexes)
         {
             // Push each index into the results
-            cout << index << " ";
+            if(deleteRecord(pair.first,index*sizeof(Record)) == 1){
+                cout << "Record deleted" << endl;
+            };
         }
         cout << endl;
     }
