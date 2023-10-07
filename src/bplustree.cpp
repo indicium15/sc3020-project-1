@@ -976,6 +976,7 @@ int BPlusTree::deleteInternal(float key, Node *parent, Node *child)
         // Update numkeys
         leftNode->setNumKeys(leftNode->getNumKeys() + cursor->getNumKeys() + 1);
         cursor->setNumKeys(0);
+        this->nodesStored--;
 
         // FIXME: Check if this function call is right, especially the last parameter
         // We need to update the parent in order to fully remove the current node
@@ -1004,9 +1005,11 @@ int BPlusTree::deleteInternal(float key, Node *parent, Node *child)
         // Update variables
         cursor->setNumKeys(cursor->getNumKeys()+rightNode->getNumKeys()+1);
         rightNode->setNumKeys(0);
+        this->nodesStored--;
 
         // We need to update the parent in order to fully remove the right node
         // FIXME: Check if this function call is right, especially the last parameter
-        deleteInternal(grandParent->getKey(rightSibling-1), grandParent, rightNode);
+        Node* newRightNode = static_cast<Node *>(grandParent->getChild(rightSibling, 0).blockAddress);
+        deleteInternal(grandParent->getKey(rightSibling-1), grandParent, newRightNode);
     }
 }
