@@ -750,6 +750,9 @@ int BPlusTree::deleteNode(float key)
         leftNode->setChildren(leftNode->getNumKeys(), cursor->getChildren(cursor->getNumKeys()));
 
         this->nodesStored--; // TODO: check and see if this is the right place to reduce the number of nodes
+        
+        // FIXME: check internal method call
+        deleteInternal(parent->getKey(leftSibling), parent, cursor);
 
         // TODO: remove internal method call
     }
@@ -772,7 +775,9 @@ int BPlusTree::deleteNode(float key)
 
         this->nodesStored--; // TODO: check and see if this is the right place to reduce the number of nodes
 
-        // TODO: remove internal method call
+        // FIXME: check internal method call
+        // We need to update the parent in order to fully remove the right node.
+        deleteInternal(parent->getKey(rightSibling-1), parent, rightNode);
     }
 }
 
@@ -972,6 +977,7 @@ int BPlusTree::deleteInternal(float key, Node *parent, Node *child)
         leftNode->setNumKeys(leftNode->getNumKeys() + cursor->getNumKeys() + 1);
         cursor->setNumKeys(0);
 
+        // FIXME: Check if this function call is right, especially the last parameter
         // We need to update the parent in order to fully remove the current node
         deleteInternal(grandParent->getKey(leftSibling), grandParent, parent);
     }

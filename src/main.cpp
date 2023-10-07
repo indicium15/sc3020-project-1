@@ -383,8 +383,37 @@ int main()
 
     tree.displayTree(tree.rootNode, 1);
 
+    tree.deleteNode(0.3);
+    tree.deleteNode(0.299);
+    tree.deleteNode(0.298);
+    tree.deleteNode(0.297);
+    tree.deleteNode(0.296);
+    tree.deleteNode(0.295);
+    tree.deleteNode(0.294);
+    tree.deleteNode(0.293);
+    tree.deleteNode(0.292);
+    tree.deleteNode(0.291);
+    tree.deleteNode(0.29);
+    tree.deleteNode(0.289);
+    tree.deleteNode(0.288);
+    tree.deleteNode(0.286);
+    tree.deleteNode(0.284);
+    tree.deleteNode(0.283);
+    tree.deleteNode(0.282);
+    tree.deleteNode(0.279);
+    tree.deleteNode(0.278);
+    tree.deleteNode(0.277);
+    tree.deleteNode(0.275);
+    tree.deleteNode(0.274);
+    tree.deleteNode(0.269);
+    tree.deleteNode(0.266);
+    tree.deleteNode(0.257);
+    tree.deleteNode(0.25);
+    tree.deleteNode(0);
+
+    tree.displayTree(tree.rootNode, 1);
     //Using search query to get address vectors of all records that need to be removed from the disk
-    vector<vector<Address>> addressesToDelete = tree.searchRange(0,0.35);
+    // vector<vector<Address>> addressesToDelete = tree.searchRange(0,0.35);
     //Call method to remove these addresses from the disk
     // storage.removeRecordsfromNestedAddresses(addressesToDelete);
     // Restore the original std::cout buffer
