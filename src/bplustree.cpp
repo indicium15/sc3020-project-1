@@ -556,7 +556,7 @@ int BPlusTree::deleteNode(float key)
     Node *cursor = this->rootNode;
     Node *parent;
     int leftSibling, rightSibling; // Index of the left and the right leaf node that we need to borrow from
-    //TODO: update numNodes
+    // TODO: update numNodes
 
     // Finding the leaf node with the key to delete
     while (!cursor->getIsLeaf())
@@ -714,7 +714,7 @@ int BPlusTree::deleteNode(float key)
 
             rightNode->setChildren(cursor->getNumKeys(), rightNode->getChildren(cursor->getNumKeys() + 1));
             // TODO: check if this statement is right. delete TODO after check
-            rightNode->setChildren(cursor->getNumKeys() + 1, vector<Address>{Address{nullptr, 0}}); 
+            rightNode->setChildren(cursor->getNumKeys() + 1, vector<Address>{Address{nullptr, 0}});
 
             // Updating the parent node with the new key at the beginning of the right sibling
             parent->setKey(rightSibling - 1, rightNode->getKey(0));
@@ -728,17 +728,19 @@ int BPlusTree::deleteNode(float key)
         }
     }
 
-    //Reaching this point means that we cannot borrow keys from the siblings
-    //In this case, we must merge nodes
+    // Reaching this point means that we cannot borrow keys from the siblings
+    // In this case, we must merge nodes
 
-    //If current node has a left sibling, merge with it
-    if(leftSibling >= 0){
-        
-        //Left sibling
-        Node* leftNode = static_cast<Node *>(parent->getChild(leftSibling,0).blockAddress);
+    // If current node has a left sibling, merge with it
+    if (leftSibling >= 0)
+    {
+
+        // Left sibling
+        Node *leftNode = static_cast<Node *>(parent->getChild(leftSibling, 0).blockAddress);
 
         // Transfering all keys and pointers from current node to left sibling
-        for(int i = leftNode->getNumKeys(), j=0; j<cursor->getNumKeys(); i++, j++){
+        for (int i = leftNode->getNumKeys(), j = 0; j < cursor->getNumKeys(); i++, j++)
+        {
             leftNode->setKey(i, cursor->getKey(j));
             leftNode->setChildren(i, cursor->getChildren(j));
         }
@@ -747,32 +749,258 @@ int BPlusTree::deleteNode(float key)
         leftNode->setNumKeys(leftNode->getNumKeys() + cursor->getNumKeys());
         leftNode->setChildren(leftNode->getNumKeys(), cursor->getChildren(cursor->getNumKeys()));
 
-        this->nodesStored--; //TODO: check and see if this is the right place to reduce the number of nodes
+        this->nodesStored--; // TODO: check and see if this is the right place to reduce the number of nodes
 
-        //TODO: remove internal method call
+        // TODO: remove internal method call
     }
     // If merge with left sibling does not work, we try merging with the right sibling
-    else if(rightSibling <= parent->getNumKeys()){
+    else if (rightSibling <= parent->getNumKeys())
+    {
         // Right sibling
         Node *rightNode = static_cast<Node *>(parent->getChild(rightSibling, 0).blockAddress);
-        
+
         // Transfering all keys and pointers from right node to current node
-        for(int i = cursor->getNumKeys(), j = 0; j < rightNode->getNumKeys(); i++, j++){
+        for (int i = cursor->getNumKeys(), j = 0; j < rightNode->getNumKeys(); i++, j++)
+        {
             cursor->setKey(i, rightNode->getKey(j));
             cursor->setChildren(i, rightNode->getChildren(j));
         }
-        
+
         // Updating numkeys and making sure that the last pointer in the current node points to the node after the right node
         cursor->setNumKeys(cursor->getNumKeys() + rightNode->getNumKeys());
         cursor->setChildren(cursor->getNumKeys(), rightNode->getChildren(rightNode->getNumKeys()));
 
-        this->nodesStored--; //TODO: check and see if this is the right place to reduce the number of nodes
+        this->nodesStored--; // TODO: check and see if this is the right place to reduce the number of nodes
 
-        //TODO: remove internal method call
+        // TODO: remove internal method call
+    }
+}
 
+int BPlusTree::deleteInternal(float key, Node *parent, Node *child)
+{
+    Node *cursor = parent;
+    // TODO: Dont understand lines 364 - 367
 
+    // If current parent is root
+    if (cursor == this->rootNode)
+    {
 
+        // If we have to remove all keys in root (parent), we change the new root to its child
+        if (cursor->getNumKeys() == 1)
+        {
+
+            // If the second pointer contains the child to delete, we make the first pointer the new root
+            if (cursor->getChild(1, 0).blockAddress == child)
+            {
+                this->rootNode = static_cast<Node *>(cursor->getChild(0, 0).blockAddress);
+                cout << "Root node changed!" << endl;
+
+                return 1;
+            }
+            // if the first pointer contains the chuld to delete, we make the second pointer the new root
+            else if (cursor->getChild(0, 0).blockAddress == child)
+            {
+                this->rootNode = static_cast<Node *>(cursor->getChild(1, 0).blockAddress);
+                cout << "Root node changed!" << endl;
+                return 1;
+            }
+        }
     }
 
-    
+    int positionToDelete; // position of the internal node to be deleted
+
+    // Search for key to delete in parent based on the first key of the child to delete
+    for (int i = 0; i < cursor->getNumKeys(); i++)
+    {
+        if (cursor->getKey(i) == key)
+        {
+            positionToDelete = i;
+            break;
+        }
+    }
+
+    // Deleting the key from the root
+    for (int i = positionToDelete; i < cursor->getNumKeys(); i++)
+    {
+        cursor->setKey(i, cursor->getKey(i + 1));
+    }
+
+    // Search for pointer to delete in parent based on the key
+    for (int i = 0; i < cursor->getNumKeys() + 1; i++)
+    {
+        if (cursor->getChild(i, 0).blockAddress == child)
+        {
+            positionToDelete = i;
+            break;
+        }
+    }
+
+    // Deleting the pointer from the root
+    for (int i = positionToDelete; i < cursor->getNumKeys() + 1; i++)
+    {
+        cursor->setChild(i, cursor->getChild(i + 1, 0));
+    }
+
+    // Updating the number of keys in the parent
+    cursor->setNumKeys(cursor->getNumKeys() - 1);
+
+    // Check if the node size is valid according to the requirements
+    // TODO: Check the condition below and why we subtract 1
+    if (cursor->getNumKeys() >= ((maxKeys + 1) / 2 - 1))
+    {
+        return 1;
+    }
+
+    // Satisfying this condition means that the parent is a root node and it does not matter if it doesn't satisfy the minimum keys condition for a non leaf node
+    if (parent == this->rootNode)
+    {
+        return 1;
+    }
+
+    // We find the parent of the parent node to find the parent's siblings
+    Node *grandParent = findParent(this->rootNode, parent, parent->getKey(0));
+    int leftSibling, rightSibling;
+
+    // Find the left and right sibling of the parent
+    for (int i = 0; i < grandParent->getNumKeys() + 1; i++)
+    {
+        if (grandParent->getChild(i, 0).blockAddress == parent)
+        {
+            leftSibling = i - 1;
+            rightSibling = i + 1;
+            break;
+        }
+    }
+
+    // Check if left sibling exists
+    if (leftSibling >= 0)
+    {
+        Node *leftNode = static_cast<Node *>(grandParent->getChild(leftSibling, 0).blockAddress);
+        // Check if it is possible to take a key from the left sibling
+        if (leftNode->getNumKeys() >= ((maxKeys + 1) / 2))
+        {
+            // Making space at the beginning of the current parent to fit the incoming key from left sibling
+            for (int i = cursor->getNumKeys(); i > 0; i--)
+            {
+                cursor->setKey(i, cursor->getKey(i - 1));
+            }
+            // Transfer borrowed key and cursor to pointer from left node
+            // TODO: go through this section again
+            cursor->setKey(0, grandParent->getKey(leftSibling));
+            grandParent->setKey(leftSibling, leftNode->getKey(leftNode->getNumKeys() - 1));
+
+            // FIXME: Potential problem, look into this if we need to do use getChild() or getChildren()
+            // Move all pointers back in the cursor to fit a pointer
+            for (int i = cursor->getNumKeys() + 1; i > 0; i--)
+            {
+                cursor->setChild(i, cursor->getChild(i - 1, 0));
+            }
+
+            cursor->setChild(0, leftNode->getChild(leftNode->getNumKeys(), 0));
+
+            // Updating the number of keys in the node
+            cursor->setNumKeys(cursor->getNumKeys() + 1);
+            leftNode->setNumKeys(leftNode->getNumKeys() - 1);
+
+            // Shift left sibling's last pointer left by one
+            leftNode->setChild(cursor->getNumKeys(), leftNode->getChild(cursor->getNumKeys() + 1, 0));
+
+            return 1;
+        }
+    }
+
+    // Check if right sibling exists
+    if (rightSibling <= grandParent->getNumKeys())
+    {
+
+        Node *rightNode = static_cast<Node *>(grandParent->getChild(rightSibling, 0).blockAddress);
+
+        // Check if it is possible to take a key from the right sibling
+        if (rightNode->getNumKeys() >= ((maxKeys + 1) / 2))
+        {
+
+            // Transfer leftmost key and pointer from right node to current node
+            cursor->setKey(cursor->getNumKeys(), grandParent->getKey(positionToDelete));
+            grandParent->setKey(positionToDelete, rightNode->getKey(0));
+
+            // Shift the keys in the right node left by one
+            for (int i = 0; i < rightNode->getNumKeys() - 1; i++)
+            {
+                rightNode->setKey(i, rightNode->getKey(i + 1));
+            }
+
+            // Transfer first pointer from right node to cursor
+            cursor->setChild(cursor->getNumKeys() + 1, rightNode->getChild(0, 0));
+
+            // Shift pointers left for right node and delete the first pointer
+            for (int i = 0; i < rightNode->getNumKeys(); ++i)
+            {
+                rightNode->setChild(i, rightNode->getChild(i + 1, 0));
+            }
+
+            // Updating the number of keys inside the nodes
+            cursor->setNumKeys(cursor->getNumKeys() + 1);
+            rightNode->setNumKeys(rightNode->getNumKeys() - 1);
+
+            return 1;
+        }
+    }
+
+    // Reaching here means that we cannot borrow keys from siblings so we must merge nodes
+    // If left sibling exists we merge with it
+    if (leftSibling >= 0)
+    {
+        Node *leftNode = static_cast<Node *>(grandParent->getChild(leftSibling, 0).blockAddress);
+
+        // Making left node's upper bound to be cursor's lower bound
+        leftNode->setKey(leftNode->getNumKeys(), grandParent->getKey(leftSibling));
+
+        // Transfer all keys from current node to left node
+        for (int i = leftNode->getNumKeys() + 1, j = 0; j < cursor->getNumKeys(); j++)
+        {
+            leftNode->setKey(i, cursor->getKey(j));
+        }
+
+        // Transfer all pointers from current node to left node
+        for (int i = leftNode->numKeys + 1, j = 0; j < cursor->numKeys + 1; j++)
+        {
+            leftNode->setChild(i, cursor->getChild(j, 0));
+            cursor->setChild(j, Address{nullptr, 0});
+        }
+
+        // Update numkeys
+        leftNode->setNumKeys(leftNode->getNumKeys() + cursor->getNumKeys() + 1);
+        cursor->setNumKeys(0);
+
+        // We need to update the parent in order to fully remove the current node
+        deleteInternal(grandParent->getKey(leftSibling), grandParent, parent);
+    }
+    else if (rightSibling <= grandParent->getNumKeys())
+    {
+        Node *rightNode = static_cast<Node *>(grandParent->getChild(rightSibling, 0).blockAddress);
+
+        // Upper bound of cursor is lower bound of right sibling
+        cursor->setKey(cursor->getNumKeys(), grandParent->getKey(rightSibling - 1));
+
+        // Transfer all keys from right node into current
+        for (int i = cursor->getNumKeys() + 1, j = 0; j < rightNode->getNumKeys(); j++)
+        {
+            cursor->setKey(i, rightNode->getKey(j));
+        }
+
+        // Transfer all pointers from right node into current
+        for (int i = cursor->getNumKeys() + 1, j = 0; j < rightNode->getNumKeys() + 1; j++)
+        {
+            cursor->setChild(i, rightNode->getChild(j, 0));
+            rightNode->setChild(j, Address{nullptr, 0});
+        }
+
+        // Update variables
+        cursor->setNumKeys(cursor->getNumKeys()+rightNode->getNumKeys()+1);
+        rightNode->setNumKeys(0);
+
+        // We need to update the parent in order to fully remove the right node
+        // FIXME: Check if this function call is right, especially the last parameter
+        deleteInternal(grandParent->getKey(rightSibling-1), grandParent, rightNode);
+    }
 }

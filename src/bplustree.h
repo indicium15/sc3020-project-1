@@ -19,6 +19,7 @@ using namespace std;
 
 class Node{
     private:
+        // attributes
         float *keys;
         uint8_t numKeys;
         uint8_t maxKeys;
@@ -26,6 +27,8 @@ class Node{
         bool isLeaf;
         friend class BPlusTree;
     public:
+
+        //methods
         Node(int maxKeys, bool isLeaf);
         ~Node();
 
@@ -70,6 +73,7 @@ class Node{
 
 class BPlusTree{
     public:
+        //attributes
         Node* rootNode;
         int keysStored;
         int maxKeys;
@@ -77,17 +81,20 @@ class BPlusTree{
         int nodesStored;
         int nodeSize;
         int blockSize;
+        
+        //methods
+        BPlusTree(int numberOfRecords);
+        ~BPlusTree();
         int insert(float key, const vector<Address> value);
         int insertInternal(float key, Node* parent, Node* child);
         int deleteNode(float key);
         int remove(float key);
+        int deleteInternal(float key, Node* parent, Node* child);
         void displayTree(Node *cursor, int level);
         void displayNode(Node* node);
         Node* findParent(Node* rootNode, Node* childNode, float lowerBoundKey);
         vector<Address> searchKey(float key);
         vector<vector<Address>> searchRange(float lowerKey, float upperKey);
-        BPlusTree(int numberOfRecords);
-        ~BPlusTree();
 };
 
 #endif
