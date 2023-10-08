@@ -249,15 +249,16 @@ int main()
         cout << "Count: " << count << endl;
         std::cout << "Key: " << pair.first << ", Value: " << &pair.second << endl;
         tree.insert(pair.first, pair.second);
+        tree.displayTree(tree.rootNode, 1);
         // cout << "Content of the root node: " << endl;
-        for (int i = 0; i < tree.rootNode->getNumKeys(); i++)
-        {
-            cout << tree.rootNode->getChild(i, 0).blockAddress << " | "<< tree.rootNode->getKey(i) << " | ";
-        }
-        if(tree.rootNode->getChild(tree.rootNode->getNumKeys(), 0).blockAddress != nullptr)
-            cout << tree.rootNode->getChild(tree.rootNode->getNumKeys(), 0).blockAddress << endl;
-        else
-            cout << "NULL" << endl;
+        // for (int i = 0; i < tree.rootNode->getNumKeys(); i++)
+        // {
+        //     cout << tree.rootNode->getChild(i, 0).blockAddress << " | "<< tree.rootNode->getKey(i) << " | ";
+        // }
+        // if(tree.rootNode->getChild(tree.rootNode->getNumKeys(), 0).blockAddress != nullptr)
+        //     cout << tree.rootNode->getChild(tree.rootNode->getNumKeys(), 0).blockAddress << endl;
+        // else
+        //     cout << "NULL" << endl;
         cout << "Number of nodes: " << tree.nodesStored << endl;
         cout << "Number of keys: " << tree.keysStored << endl;
         cout << "Number of levels: " << tree.levels << endl;
@@ -364,6 +365,7 @@ int main()
     cout << "Runtime of Search and Retrieval: " << experimentFourRuntime.count() << " nanoseconds" << endl; 
     cout << "Runtime of Linear Search of Data Blocks: " << experimentFourLinearSearchRuntime.count() << " nanoseconds" << endl;
     
+    tree.displayTree(tree.rootNode, 1); 
     cout.rdbuf(outputFile1.rdbuf());
     //Experiment 5
     cout << "------------------------------------------" << endl;
@@ -407,7 +409,14 @@ int main()
     for(auto pair: recordMap){
         if(pair.first <= 0.35){
             // Measure the runtime for each individual insertion call
+            if(pair.first == static_cast<float>(0.29)){
+                tree.deleteNode(0.29);
+                tree.displayTree(tree.rootNode,1);
+                continue;
+            }
+            cout << "Deleting Record " << pair.first << endl;
             tree.deleteNode(pair.first);
+            tree.displayTree(tree.rootNode, 1);
         }
         else break;
     }
@@ -422,11 +431,13 @@ int main()
     cout << "Number of levels of the updated B+ tree: " << tree.levels << endl;
     cout << "Content of the Root Node: " << endl;
     tree.displayNode(tree.rootNode);
-    cout << "Runtime of Linear Seach Query for Keys Between 0 and 0.35: " << experimentFiveLinearSearchRuntime.count() << " nanoseconds" << endl;
+    cout << "Runtime of Linear Search Query for Keys Between 0 and 0.35: " << experimentFiveLinearSearchRuntime.count() << " nanoseconds" << endl;
     cout << "Number of Data Blocks Accessed for Linear Search: " << deletionLinearSearchDataBlocksAccessed << endl;
     cout << "Runtime of B+ Tree Query for Keys Between 0 and 0.35: " << experimentFiveBPlusTreeSearchRuntime.count() << " nanoseconds" << endl;
     cout << "Runtime of B+ Tree Deletion of Keys Between 0 and 0.35: " << bPlusTreeDeletionRuntime.count() << " nanoseconds" << endl;
     cout << "Runtime of Database Record Deletion of Keys Between 0 and 0.35: " << recordDeletionRuntime.count() << " nanoseconds" << endl;
+    
+    tree.displayTree(tree.rootNode, 1);
     // Restore the original std::cout buffer
     cout.rdbuf(coutBuffer);
     // // Close the output file
