@@ -333,11 +333,9 @@ int BPlusTree::insertInternal(float key, Node *parent, Node *child)
             newSibling->setKey(i, tempKeysList[j]);
         }
 
-        //TODO: change made here
         // newSibling->setKey(newSibling->getNumKeys(), tempKeysList[maxKeys]);
 
         // Assign pointers into the new parent node
-        //TODO: change made here
         for (int i = 0, j = cursor->getNumKeys()+1; i < newSibling->getNumKeys() + 1; i++, j++)
         {
             newSibling->setChild(i, tempAddressList[j]);
@@ -358,7 +356,6 @@ int BPlusTree::insertInternal(float key, Node *parent, Node *child)
         }
 
         // Assign new child to original parent
-        // TODO: change made here
         newSibling->setChild(newSibling->getNumKeys(), Address{child, 0});
 
         if (cursor == this->rootNode)
@@ -745,9 +742,6 @@ int BPlusTree::deleteNode(float key)
         cursor->setNumKeys(cursor->getNumKeys() + rightNode->getNumKeys());
         cursor->setChildren(cursor->getNumKeys(), rightNode->getChildren(rightNode->getNumKeys()));
 
-        if(key == static_cast<float>(0.29)){
-            bool i = true;
-        }
         // We need to update the parent in order to fully remove the right node.
         deleteInternal(parent->getKey(rightSibling - 1), parent, rightNode);
     }
@@ -812,7 +806,6 @@ int BPlusTree::deleteInternal(float key, Node *parent, Node *child)
             break;
         }
     }
-// TODO: EVERYTHING IS CORRECT TILL THIS POINT!
     // Deleting the pointer from the root
     for (int i = positionToDelete; i < cursor->getNumKeys() + 1; i++)
     {
@@ -823,7 +816,6 @@ int BPlusTree::deleteInternal(float key, Node *parent, Node *child)
     cursor->setNumKeys(cursor->getNumKeys() - 1);
 
     // Check if the node size is valid according to the requirements
-    // TODO: Original Line
     // if (cursor->getNumKeys() >= ((maxKeys + 1) / 2 - 1))
     if (cursor->getNumKeys() >= ((maxKeys) / 2))
     {
@@ -837,7 +829,6 @@ int BPlusTree::deleteInternal(float key, Node *parent, Node *child)
     }
 
     // We find the parent of the parent node to find the parent's siblings
-    // TODO: Original Line
     // Node *grandParent = findParent(this->rootNode, parent, parent->getKey(0));
     Node *grandParent = findParent(this->rootNode, cursor, cursor->getKey(0));
     int leftSibling, rightSibling;
@@ -901,7 +892,6 @@ int BPlusTree::deleteInternal(float key, Node *parent, Node *child)
         {
 
             // Transfer leftmost key and pointer from right node to current node
-            // TODO: come back here for pos later
             cursor->setKey(cursor->getNumKeys(), grandParent->getKey(positionToDelete));
             grandParent->setKey(positionToDelete, rightNode->getKey(0));
 
@@ -987,4 +977,5 @@ int BPlusTree::deleteInternal(float key, Node *parent, Node *child)
         Node *newRightNode = static_cast<Node *>(grandParent->getChild(rightSibling, 0).blockAddress);
         deleteInternal(grandParent->getKey(rightSibling - 1), grandParent, newRightNode);
     }
+    return 1;
 }

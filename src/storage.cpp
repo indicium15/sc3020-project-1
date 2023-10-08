@@ -134,6 +134,7 @@ uchar *Storage::findAvailableBlock(int recordSize)
         blockRecords[currentBlock] = 0;
         return databaseCursor;
     }
+    return nullptr;
 }
 
 /**
