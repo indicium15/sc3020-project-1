@@ -788,10 +788,11 @@ int BPlusTree::deleteInternal(float key, Node *parent, Node *child)
     int positionToDelete; // position of the internal node to be deleted
 
     // Search for key to delete in parent based on the first key of the child to delete
-    for (positionToDelete = 0; positionToDelete < cursor->getNumKeys(); positionToDelete++)
+    for (int i = 0; i < cursor->getNumKeys(); i++)
     {
-        if (cursor->getKey(positionToDelete) == key)
+        if (cursor->getKey(i) == key)
         {
+            positionToDelete = i;
             break;
         }
     }
@@ -803,10 +804,11 @@ int BPlusTree::deleteInternal(float key, Node *parent, Node *child)
     }
 
     // Search for pointer to delete in parent based on the key
-    for (positionToDelete = 0; positionToDelete < cursor->getNumKeys() + 1; positionToDelete++)
+    for (int i = 0; i < cursor->getNumKeys() + 1; i++)
     {
-        if (cursor->getChild(positionToDelete, 0).blockAddress == child)
+        if (cursor->getChild(i, 0).blockAddress == child)
         {
+            positionToDelete = i;
             break;
         }
     }
