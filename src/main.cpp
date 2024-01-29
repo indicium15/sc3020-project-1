@@ -250,15 +250,6 @@ int main()
         std::cout << "Key: " << pair.first << ", Value: " << &pair.second << endl;
         tree.insert(pair.first, pair.second);
         tree.displayTree(tree.rootNode, 1);
-        // cout << "Content of the root node: " << endl;
-        // for (int i = 0; i < tree.rootNode->getNumKeys(); i++)
-        // {
-        //     cout << tree.rootNode->getChild(i, 0).blockAddress << " | "<< tree.rootNode->getKey(i) << " | ";
-        // }
-        // if(tree.rootNode->getChild(tree.rootNode->getNumKeys(), 0).blockAddress != nullptr)
-        //     cout << tree.rootNode->getChild(tree.rootNode->getNumKeys(), 0).blockAddress << endl;
-        // else
-        //     cout << "NULL" << endl;
         cout << "Number of nodes: " << tree.nodesStored << endl;
         cout << "Number of keys: " << tree.keysStored << endl;
         cout << "Number of levels: " << tree.levels << endl;
