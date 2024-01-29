@@ -400,14 +400,8 @@ int main()
     for(auto pair: recordMap){
         if(pair.first <= 0.35){
             // Measure the runtime for each individual insertion call
-            if(pair.first == static_cast<float>(0.29)){
-                tree.deleteNode(0.29);
-                tree.displayTree(tree.rootNode,1);
-                continue;
-            }
             cout << "Deleting Record " << pair.first << endl;
             tree.deleteNode(pair.first);
-            tree.displayTree(tree.rootNode, 1);
         }
         else break;
     }
